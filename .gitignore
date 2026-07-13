@@ -1,3 +1,5 @@
 .DS_Store
 Thumbs.db
 firebase-debug.log
+__pycache__/
+~$*.xlsx

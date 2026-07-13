@@ -45,6 +45,14 @@ La fuente maestra es `Cervezas.xlsx`. Para regenerar el archivo estático que co
 
 El resultado se guarda en `beer-catalog.js`; no debe editarse manualmente.
 
+Para buscar y auditar fotografías abiertas en Wikimedia Commons:
+
+```powershell
+C:\Python39\python.exe .\tools\enrich-beer-images.py
+```
+
+Las coincidencias quedan registradas en `tools/beer-image-audit.csv`. Las fichas sin una fotografía suficientemente fiable muestran una ilustración propia, por lo que el álbum nunca deja el área visual vacía.
+
 ## Publicación
 
 Cada cambio enviado a la rama `main` se publica automáticamente con GitHub Pages mediante GitHub Actions.

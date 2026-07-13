@@ -330,15 +330,33 @@ function countryFlag(country) {
   };
   return flags[country] || "🌍";
 }
+const COUNTRY_CODES = {
+  "Alemania":"de", "Argentina":"ar", "Australia":"au", "Austria":"at", "Bélgica":"be", "Brasil":"br",
+  "Canadá":"ca", "China":"cn", "Cuba":"cu", "Dinamarca":"dk", "Ecuador":"ec", "España":"es",
+  "Estados Unidos":"us", "Finlandia":"fi", "Francia":"fr", "India":"in", "Irlanda":"ie", "Italia":"it",
+  "Jamaica":"jm", "Japón":"jp", "Marruecos":"ma", "México":"mx", "Países Bajos":"nl", "Perú":"pe",
+  "Polonia":"pl", "Portugal":"pt", "Reino Unido":"gb", "República Checa":"cz", "Singapur":"sg", "Tailandia":"th"
+};
+function countryFlagMarkup(country) {
+  const code = COUNTRY_CODES[country];
+  return code ? `<img class="country-flag" src="assets/flags/${code}.svg" alt="" loading="lazy" />` : `<span class="country-flag country-flag--emoji" aria-hidden="true">${countryFlag(country)}</span>`;
+}
+function beerIllustration(beer, className = "beer-card__fallback", hidden = false) {
+  const words = beer.name.trim().split(/\s+/).filter(Boolean); const initials = `${words[0]?.[0] || "B"}${words.length > 1 ? words[1][0] : ""}`.toUpperCase();
+  const hue = [...beer.id].reduce((sum, character) => sum + character.charCodeAt(0), 0) % 42 + 32;
+  return `<span class="${className}" style="--beer-hue:${hue}"${hidden ? " hidden" : ""}><svg viewBox="0 0 64 76" aria-hidden="true"><path d="M15 19h31v44a7 7 0 0 1-7 7H22a7 7 0 0 1-7-7V19Z"/><path d="M46 29h5a8 8 0 0 1 8 8v14a8 8 0 0 1-8 8h-5"/><path d="M19 19c0-7 5-12 12-12 4 0 7 2 9 5 7-1 11 4 10 10H19v-3Z"/><path d="M23 30v28M32 30v28M41 30v28"/></svg><b>${escapeHtml(initials)}</b><small>${escapeHtml(beer.name)}</small></span>`;
+}
 function beerFact(label, value) {
   return value !== "" && value !== null && value !== undefined ? `<div><small>${label}</small><strong>${escapeHtml(String(value))}</strong></div>` : "";
 }
 function showBeerDetails(beer) {
   const image = normalizeCommonsImage(beer.image);
   const dialog = $("#beer-detail-dialog");
-  $("#beer-detail-media").innerHTML = image ? `<img src="${escapeHtml(image)}" alt="Imagen de ${escapeHtml(beer.name)}" referrerpolicy="no-referrer" />` : `<span>${escapeHtml(beer.name.trim().charAt(0).toUpperCase())}</span>`;
+  $("#beer-detail-media").innerHTML = image ? `<img src="${escapeHtml(image)}" alt="Imagen de ${escapeHtml(beer.name)}" referrerpolicy="no-referrer" />${beerIllustration(beer,"beer-detail-fallback",true)}` : beerIllustration(beer,"beer-detail-fallback");
+  const detailImage = $("#beer-detail-media > img");
+  if (detailImage) detailImage.addEventListener("error", () => { detailImage.hidden = true; detailImage.nextElementSibling.hidden = false; }, {once:true});
   $("#beer-detail-name").textContent = beer.name;
-  $("#beer-detail-country").innerHTML = `<span aria-hidden="true">${beer.flag || countryFlag(beer.country)}</span>${escapeHtml(beer.country)}`;
+  $("#beer-detail-country").innerHTML = `${countryFlagMarkup(beer.country)}${escapeHtml(beer.country)}`;
   $("#beer-detail-facts").innerHTML = [beerFact("Tipo", beer.style), beerFact("Alcohol", beer.abv !== null && beer.abv !== undefined ? `${beer.abv} % vol.` : ""), beerFact("Fermentación", beer.fermentation)].join("") || `<p class="beer-detail-missing">Sin ficha técnica disponible.</p>`;
   $("#beer-detail-flavor").textContent = beer.flavor || "El catálogo original no incluye una nota de sabor para esta cerveza.";
   dialog.showModal();
@@ -353,11 +371,11 @@ function renderBeerAlbum() {
   $("#album-progress").textContent = `${marked.size} probadas`; $("#album-tried-count").textContent = marked.size;
   $("#album-catalog-count").textContent = beerCatalog.length || "—";
   $("#beer-album-grid").innerHTML = visible.map((beer) => {
-    const tried = marked.has(beer.id); const image = normalizeCommonsImage(beer.image); const initial = beer.name.trim().charAt(0).toUpperCase();
-    const fallback = `<span class="beer-card__fallback"${image ? " hidden" : ""}>${escapeHtml(initial)}</span>`;
-    return `<article class="beer-card${tried ? " is-tried" : ""}" data-beer-id="${beer.id}"><button class="beer-card__main" type="button" data-beer-details aria-label="Ver ficha de ${escapeHtml(beer.name)}"><span class="beer-card__image">${image ? `<img src="${escapeHtml(image)}" alt="Imagen de ${escapeHtml(beer.name)}" loading="lazy" referrerpolicy="no-referrer" />` : ""}${fallback}</span><span class="beer-card__copy"><strong>${escapeHtml(beer.name)}</strong><span class="beer-style">${escapeHtml(beer.style || "Tipo no indicado")}${beer.abv !== null && beer.abv !== undefined ? ` · ${escapeHtml(beer.abv)}%` : ""}</span><small class="country-label"><span class="country-flag" aria-hidden="true">${beer.flag || countryFlag(beer.country)}</span><span class="country-name">${escapeHtml(beer.country)}</span></small></span></button><button class="beer-card__check" type="button" data-album-toggle aria-pressed="${tried}" aria-label="${tried ? "Quitar" : "Añadir"} ${escapeHtml(beer.name)} ${tried ? "del" : "al"} álbum">${tried ? "✓" : "+"}</button></article>`;
+    const tried = marked.has(beer.id); const image = normalizeCommonsImage(beer.image);
+    const fallback = beerIllustration(beer,"beer-card__fallback",Boolean(image));
+    return `<article class="beer-card${tried ? " is-tried" : ""}" data-beer-id="${beer.id}"><button class="beer-card__main" type="button" data-beer-details aria-label="Ver ficha de ${escapeHtml(beer.name)}"><span class="beer-card__image">${image ? `<img src="${escapeHtml(image)}" alt="Imagen de ${escapeHtml(beer.name)}" loading="lazy" referrerpolicy="no-referrer" />` : ""}${fallback}</span><span class="beer-card__copy"><strong>${escapeHtml(beer.name)}</strong><span class="beer-style">${escapeHtml(beer.style || "Tipo no indicado")}${beer.abv !== null && beer.abv !== undefined ? ` · ${escapeHtml(beer.abv)}%` : ""}</span><small class="country-label">${countryFlagMarkup(beer.country)}<span class="country-name">${escapeHtml(beer.country)}</span></small></span></button><button class="beer-card__check" type="button" data-album-toggle aria-pressed="${tried}" aria-label="${tried ? "Quitar" : "Añadir"} ${escapeHtml(beer.name)} ${tried ? "del" : "al"} álbum">${tried ? "✓" : "+"}</button></article>`;
   }).join("");
-  $("#beer-album-grid").querySelectorAll("img").forEach((imageElement) => imageElement.addEventListener("error", () => {
+  $("#beer-album-grid").querySelectorAll(".beer-card__image > img").forEach((imageElement) => imageElement.addEventListener("error", () => {
     imageElement.hidden = true;
     const fallbackElement = imageElement.nextElementSibling;
     if (fallbackElement) fallbackElement.hidden = false;
