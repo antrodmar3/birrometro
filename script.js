@@ -1,5 +1,3 @@
-const STORAGE_KEY = "birrometro-v1";
-const LEGACY_STORAGE_KEY = ["cervezo", "metro-v1"].join("");
 const CLOSED_BEER_CATALOG = [
   {id:"Q610086",name:"Achel",country:"Bélgica",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Achellogo.png"},
   {id:"Q478119",name:"Amstel",country:"Países Bajos",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Amstel%20coaster.jpg"},
@@ -56,6 +54,7 @@ const CLOSED_BEER_CATALOG = [
   {id:"Q3503168",name:"Żywiec",country:"Polonia",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Zywiec%20Beer.JPG"}
 ];
 const state = loadState();
+let activeUserId = null;
 let volumeUnit = "L";
 const beerCatalog = CLOSED_BEER_CATALOG;
 let albumFilter = "all";
@@ -74,14 +73,25 @@ const els = {
 };
 
 function loadState() {
-  try {
-    const source = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
-    const saved = JSON.parse(source);
-    if (source && !localStorage.getItem(STORAGE_KEY)) localStorage.setItem(STORAGE_KEY, source);
-    return { drinks: Array.isArray(saved?.drinks) ? saved.drinks : [], imports: saved?.imports || {}, album: Array.isArray(saved?.album) ? saved.album : [] };
-  } catch { return { drinks: [], imports: {}, album: [] }; }
+  return { drinks: [], imports: {}, album: [] };
 }
-function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); window.dispatchEvent(new CustomEvent("birrometro-state-save", {detail:state})); }
+function userStorageKey(uid) { return `birrometro-user-${uid}`; }
+function readUserState(uid) {
+  try {
+    const saved = JSON.parse(localStorage.getItem(userStorageKey(uid)) || "{}");
+    return {drinks:Array.isArray(saved.drinks) ? saved.drinks : [],imports:saved.imports || {},album:sanitizeAlbum(saved.album)};
+  } catch { return {drinks:[],imports:{},album:[]}; }
+}
+function applyState(nextState) {
+  state.drinks = Array.isArray(nextState?.drinks) ? nextState.drinks : [];
+  state.imports = nextState?.imports || {};
+  state.album = sanitizeAlbum(nextState?.album);
+}
+function save() {
+  if (!activeUserId) return;
+  localStorage.setItem(userStorageKey(activeUserId), JSON.stringify(state));
+  window.dispatchEvent(new CustomEvent("birrometro-state-save", {detail:state}));
+}
 function importInitialTotals() {
   if (state.imports.initialTally207) return;
   const tally = [
@@ -95,7 +105,6 @@ function importInitialTotals() {
   });
   state.imports.initialTally207 = importedAt; save();
 }
-importInitialTotals();
 function correctFormatVolumes() {
   if (state.imports.formatVolumesV2) return;
   state.drinks.forEach((drink) => {
@@ -104,7 +113,6 @@ function correctFormatVolumes() {
   });
   state.imports.formatVolumesV2 = new Date().toISOString(); save();
 }
-correctFormatVolumes();
 function spreadInitialTally() {
   if (state.imports.spreadInitialTallyV2) return;
   const imported = state.drinks.filter((drink) => String(drink.id).startsWith("initial-tally-"));
@@ -141,7 +149,6 @@ function spreadInitialTally() {
   });
   state.imports.spreadInitialTallyV2 = new Date().toISOString(); save();
 }
-spreadInitialTally();
 function startOfDay(date = new Date()) { const d = new Date(date); d.setHours(0,0,0,0); return d; }
 function startOfWeek() { const d = startOfDay(); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return d; }
 function startOfMonth() { const d = startOfDay(); d.setDate(1); return d; }
@@ -348,22 +355,50 @@ $("#export-data").addEventListener("click", exportData);
 $("#export-data-settings").addEventListener("click", exportData);
 document.querySelectorAll("dialog").forEach((dialog) => dialog.addEventListener("click", (event) => { if (event.target === dialog) dialog.close(); }));
 document.querySelectorAll("[data-close-dialog]").forEach((button) => button.addEventListener("click", () => button.closest("dialog").close()));
-$("#google-login").addEventListener("click", () => window.dispatchEvent(new Event("birrometro-login")));
-$("#google-logout").addEventListener("click", () => window.dispatchEvent(new Event("birrometro-logout")));
+function requestLogin() {
+  $("#gate-google-login").disabled = true;
+  $("#auth-gate-status").textContent = "Abriendo Google…";
+  window.dispatchEvent(new Event("birrometro-login"));
+}
+$("#google-login").addEventListener("click", requestLogin);
+$("#gate-google-login").addEventListener("click", requestLogin);
+$("#google-logout").addEventListener("click", () => { appShell.dataset.auth = "pending"; window.dispatchEvent(new Event("birrometro-logout")); });
 window.addEventListener("birrometro-auth", (event) => {
   const user = event.detail;
+  if (user) {
+    activeUserId = user.uid;
+    applyState(readUserState(user.uid));
+    appShell.dataset.auth = "ready";
+  } else {
+    activeUserId = null;
+    applyState({drinks:[],imports:{},album:[]});
+    appShell.dataset.auth = "locked";
+    appShell.dataset.view = "home";
+    $("#gate-google-login").disabled = false;
+    $("#auth-gate-status").textContent = "Necesitas iniciar sesión para acceder a tus datos.";
+  }
   $("#profile-sync").textContent = user ? "Sincronizado" : "Sin conectar";
   $("#google-login").hidden = Boolean(user); $("#google-logout").hidden = !user;
   $("#profile-name").textContent = user?.displayName || "Tus datos, en todos tus dispositivos";
   $("#profile-email").textContent = user?.email || "Inicia sesión para sincronizar Birrómetro";
   $("#profile-avatar").innerHTML = user?.photoURL ? `<img src="${escapeHtml(user.photoURL)}" alt="" referrerpolicy="no-referrer" />` : "B";
+  render();
 });
 window.addEventListener("birrometro-cloud-state", (event) => {
-  if (!event.detail?.drinks) return;
-  state.drinks = event.detail.drinks; state.imports = event.detail.imports || {}; state.album = sanitizeAlbum(event.detail.album);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); render(); showToast("Datos sincronizados");
+  if (!activeUserId || !Array.isArray(event.detail?.drinks)) return;
+  applyState(event.detail);
+  localStorage.setItem(userStorageKey(activeUserId), JSON.stringify(state));
+  localStorage.removeItem("birrometro-v1");
+  localStorage.removeItem(["cervezo", "metro-v1"].join(""));
+  appShell.dataset.auth = "ready"; render(); showToast("Datos sincronizados");
 });
-window.addEventListener("birrometro-auth-error", () => showToast("No se pudo iniciar sesión con Google"));
+window.addEventListener("birrometro-sync-error", () => showToast("Sin conexión · mostrando la copia de esta cuenta"));
+window.addEventListener("birrometro-auth-error", () => {
+  $("#gate-google-login").disabled = false;
+  $("#auth-gate-status").textContent = "No se pudo iniciar sesión. Inténtalo de nuevo.";
+  if (!activeUserId) appShell.dataset.auth = "locked";
+  showToast("No se pudo iniciar sesión con Google");
+});
 $("#beer-album-grid").addEventListener("click", (event) => {
   const card = event.target.closest("[data-beer-id]"); if (!card) return;
   const beer = beerCatalog.find((item) => item.id === card.dataset.beerId) || state.album.find((item) => item.id === card.dataset.beerId); if (!beer) return;

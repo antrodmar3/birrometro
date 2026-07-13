@@ -36,14 +36,20 @@ window.addEventListener("birrometro-logout", () => signOut(auth));
 
 setPersistence(auth, browserLocalPersistence).then(() => onAuthStateChanged(auth, async (user) => {
   currentUser = user;
+  clearTimeout(syncTimer);
   window.dispatchEvent(new CustomEvent("birrometro-auth", { detail:publicUser(user) }));
   if (!user) return;
-  const reference = userDocument(user.uid);
-  const snapshot = await getDoc(reference);
-  if (snapshot.exists()) {
-    window.dispatchEvent(new CustomEvent("birrometro-cloud-state", { detail:snapshot.data() }));
-    return;
+  try {
+    const reference = userDocument(user.uid);
+    const snapshot = await getDoc(reference);
+    if (snapshot.exists()) {
+      window.dispatchEvent(new CustomEvent("birrometro-cloud-state", { detail:snapshot.data() }));
+      return;
+    }
+    const initialState = { drinks:[], imports:{}, album:[] };
+    await syncState(initialState);
+    window.dispatchEvent(new CustomEvent("birrometro-cloud-state", { detail:initialState }));
+  } catch {
+    window.dispatchEvent(new Event("birrometro-sync-error"));
   }
-  const local = JSON.parse(localStorage.getItem("birrometro-v1") || localStorage.getItem(["cervezo", "metro-v1"].join("")) || "{}");
-  await syncState({ drinks:local.drinks || [], imports:local.imports || {}, album:local.album || [] });
 })).catch(() => window.dispatchEvent(new Event("birrometro-auth-error")));
