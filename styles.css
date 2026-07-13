@@ -71,7 +71,7 @@ section { scroll-margin-top: 90px; }
 .section-badge, .peak-label { padding: 7px 10px; border: 1px solid var(--line); border-radius: 20px; background: var(--card); color: var(--muted); font-size: 10px; font-weight: 700; white-space: nowrap; }
 .text-button { border: 0; background: transparent; color: var(--muted); font-size: 11px; font-weight: 700; text-decoration: underline; text-underline-offset: 4px; cursor: pointer; }
 
-.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 .stats-grid article { padding: 20px; border: 1px solid var(--line); border-radius: 20px; background: var(--card); }
 .stats-grid span, .stats-grid small { display: block; color: var(--muted); font-size: 10px; }
 .stats-grid strong { display: block; margin: 18px 0 3px; font-family: "Space Grotesk"; font-size: 38px; line-height: 1; letter-spacing: -.055em; }

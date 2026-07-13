@@ -4,23 +4,23 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#171914" />
-    <meta name="description" content="Cervezómetro: registra tu consumo de cerveza de forma sencilla y consciente." />
-    <title>Cervezómetro</title>
+    <meta name="description" content="Birrómetro: registra tu consumo de cerveza de forma sencilla y consciente." />
+    <title>Birrómetro</title>
     <link rel="manifest" href="manifest.webmanifest" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-title" content="Cervezómetro" />
+    <meta name="apple-mobile-web-app-title" content="Birrómetro" />
     <link rel="icon" href="icon.svg" type="image/svg+xml" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=15" />
+    <link rel="stylesheet" href="styles.css?v=16" />
   </head>
   <body>
     <div class="app-shell">
       <header class="topbar">
-        <a class="brand" href="#inicio" aria-label="Cervezómetro, inicio">
+        <a class="brand" href="#inicio" aria-label="Birrómetro, inicio">
           <span class="brand-mark" aria-hidden="true"><img src="icon.svg" alt="" /></span>
-          <span>Cervezómetro</span>
+          <span>Birrómetro</span>
         </a>
         <button class="icon-button" id="open-settings" type="button" aria-label="Abrir ajustes">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21h-4v-.08A1.7 1.7 0 0 0 9 19.37a1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.63 15 1.7 1.7 0 0 0 3.08 14H3v-4h.08A1.7 1.7 0 0 0 4.63 9a1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.63 1.7 1.7 0 0 0 10 3.08V3h4v.08A1.7 1.7 0 0 0 15 4.63a1.7 1.7 0 0 0 1.88-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0 0 19.37 9 1.7 1.7 0 0 0 20.92 10H21v4h-.08A1.7 1.7 0 0 0 19.4 15Z"/></svg>
@@ -61,7 +61,6 @@
             <article><span>Esta semana</span><strong id="week-count">0</strong><small>cervezas</small></article>
             <article><span>Este mes</span><strong id="month-count">0</strong><small>cervezas</small></article>
             <article><span>Racha actual</span><strong id="streak-count">0</strong><small>días con registros</small></article>
-            <article><span>Alcohol puro</span><strong id="alcohol-total">0</strong><small>unidades esta semana</small></article>
           </div>
         </section>
 
@@ -187,6 +186,6 @@
     </dialog>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script src="script.js?v=15"></script>
+    <script src="script.js?v=16"></script>
   </body>
 </html>

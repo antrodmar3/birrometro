@@ -1,6 +1,6 @@
 {
-  "name": "Cervezómetro",
-  "short_name": "Cervezómetro",
+  "name": "Birrómetro",
+  "short_name": "Birrómetro",
   "description": "Registra tu consumo de cerveza de forma sencilla y consciente.",
   "start_url": "./",
   "display": "standalone",

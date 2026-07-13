@@ -4,7 +4,7 @@ let volumeUnit = "L";
 const $ = (selector) => document.querySelector(selector);
 const els = {
   todayCount: $("#today-count"), yearCount: $("#year-count"),
-  weekCount: $("#week-count"), monthCount: $("#month-count"), streak: $("#streak-count"), alcohol: $("#alcohol-total"),
+  weekCount: $("#week-count"), monthCount: $("#month-count"), streak: $("#streak-count"),
   history: $("#history-list"),
   empty: $("#empty-state"), addDialog: $("#add-dialog"), settingsDialog: $("#settings-dialog"), moreDialog: $("#more-dialog"), lateDialog: $("#late-dialog"),
   toast: $("#toast")
@@ -82,7 +82,6 @@ function startOfWeek() { const d = startOfDay(); d.setDate(d.getDate() - ((d.get
 function startOfMonth() { const d = startOfDay(); d.setDate(1); return d; }
 function startOfYear() { const d = startOfDay(); d.setMonth(0, 1); return d; }
 function since(date) { return state.drinks.filter((drink) => new Date(drink.date) >= date); }
-function alcoholUnits(drink) { return (Number(drink.volume) * Number(drink.abv)) / 1000; }
 function localDateTime(date = new Date()) {
   const offset = date.getTimezoneOffset();
   return new Date(date.getTime() - offset * 60000).toISOString().slice(0,16);
@@ -192,7 +191,6 @@ function render() {
   els.weekCount.textContent = week.length; els.monthCount.textContent = month.length;
   els.streak.textContent = currentStreak();
   $("#hero-week-count").textContent = week.length; $("#hero-streak-count").textContent = currentStreak();
-  els.alcohol.textContent = week.reduce((sum, drink) => sum + alcoholUnits(drink), 0).toFixed(1);
   els.history.innerHTML = "";
   [...state.drinks].sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0,30).forEach((drink) => {
     const date = new Date(drink.date); const li = document.createElement("li"); li.className = "history-item";
@@ -246,11 +244,19 @@ if ("IntersectionObserver" in window) {
 els.history.addEventListener("click", (event) => { const button = event.target.closest("[data-id]"); if (!button) return; state.drinks = state.drinks.filter((drink) => drink.id !== button.dataset.id); save(); render(); showToast("Registro eliminado"); });
 $("#clear-data").addEventListener("click", () => { if (!confirm("¿Seguro que quieres borrar todo el historial?")) return; state.drinks = []; save(); render(); els.settingsDialog.close(); showToast("Historial borrado"); });
 function exportData() {
-  const blob = new Blob([JSON.stringify({ exportedAt:new Date().toISOString(), ...state }, null, 2)], {type:"application/json"}); const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.href=url; link.download=`cervezometro-${new Date().toISOString().slice(0,10)}.json`; link.click(); URL.revokeObjectURL(url); showToast("Datos exportados");
+  const blob = new Blob([JSON.stringify({ exportedAt:new Date().toISOString(), ...state }, null, 2)], {type:"application/json"}); const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.href=url; link.download=`birrometro-${new Date().toISOString().slice(0,10)}.json`; link.click(); URL.revokeObjectURL(url); showToast("Datos exportados");
 }
 $("#export-data").addEventListener("click", exportData);
 $("#export-data-settings").addEventListener("click", exportData);
 document.querySelectorAll("dialog").forEach((dialog) => dialog.addEventListener("click", (event) => { if (event.target === dialog) dialog.close(); }));
 document.querySelectorAll("[data-close-dialog]").forEach((button) => button.addEventListener("click", () => button.closest("dialog").close()));
-if ("serviceWorker" in navigator && location.protocol !== "file:") navigator.serviceWorker.register("service-worker.js");
+if ("serviceWorker" in navigator && location.protocol !== "file:") {
+  let refreshing = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (refreshing) return;
+    refreshing = true;
+    location.reload();
+  });
+  navigator.serviceWorker.register("service-worker.js").then((registration) => registration.update());
+}
 render();

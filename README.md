@@ -1,4 +1,4 @@
-# Cervezómetro
+# Birrómetro
 
 MVP local-first para registrar el consumo de cerveza. No necesita instalación ni compilación.
 
