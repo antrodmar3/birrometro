@@ -110,6 +110,11 @@ let activeUserId = null;
 let volumeUnit = "L";
 const beerCatalog = CLOSED_BEER_CATALOG;
 let albumFilter = "all";
+let pendingLocation = null;
+let beerMap = null;
+let beerHeatLayer = null;
+let beerPointLayer = null;
+let beerMapSignature = "";
 const beerCatalogById = new Map(beerCatalog.map((beer) => [beer.id, beer]));
 const DRIVER_WINDOW_MS = 2 * 60 * 60 * 1000;
 const ETHANOL_DENSITY = 0.789;
@@ -160,6 +165,17 @@ function save() {
   if (!activeUserId) return;
   localStorage.setItem(userStorageKey(activeUserId), JSON.stringify(state));
   window.dispatchEvent(new CustomEvent("birrometro-state-save", {detail:state}));
+}
+function sanitizeLocation(value) {
+  if (!value) return null;
+  const latitude = Number(value.latitude); const longitude = Number(value.longitude); const accuracy = Number(value.accuracy);
+  if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90 || !Number.isFinite(longitude) || longitude < -180 || longitude > 180) return null;
+  return {
+    latitude:Math.round(latitude * 100000) / 100000,
+    longitude:Math.round(longitude * 100000) / 100000,
+    accuracy:Number.isFinite(accuracy) && accuracy > 0 ? Math.round(accuracy) : null,
+    name:String(value.name || "").trim().slice(0, 60)
+  };
 }
 function alcoholGrams(drink) {
   return Math.max(0, Number(drink?.volume || 0) * (Number(drink?.abv || 0) / 100) * ETHANOL_DENSITY);
@@ -432,6 +448,67 @@ function renderBeerAlbum() {
   }, {once:true}));
   $("#album-empty").hidden = visible.length > 0;
 }
+function locatedDrinksForPeriod() {
+  const period = $("#location-period")?.value || "all"; const now = new Date();
+  return state.drinks.filter((drink) => {
+    if (!sanitizeLocation(drink.location)) return false;
+    const date = new Date(drink.date); if (Number.isNaN(date.getTime())) return false;
+    if (period === "year") return date.getFullYear() === now.getFullYear();
+    if (period === "month") return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth();
+    return true;
+  });
+}
+function locationZoneKey(location) { return `${location.latitude.toFixed(3)}|${location.longitude.toFixed(3)}`; }
+function renderLocationStats(located) {
+  const zones = new Map();
+  located.forEach((drink) => {
+    const location = sanitizeLocation(drink.location); const key = locationZoneKey(location);
+    const zone = zones.get(key) || {count:0,names:new Map()}; zone.count += 1;
+    if (location.name) zone.names.set(location.name, (zone.names.get(location.name) || 0) + 1);
+    zones.set(key, zone);
+  });
+  const favorite = [...zones.values()].sort((a,b) => b.count - a.count)[0];
+  const favoriteName = favorite ? [...favorite.names.entries()].sort((a,b) => b[1] - a[1])[0]?.[0] : "";
+  $("#map-location-count").textContent = zones.size;
+  $("#map-drink-count").textContent = located.length;
+  $("#map-favorite-place").textContent = favorite ? favoriteName || "Zona habitual" : "—";
+  $("#map-favorite-place").title = favoriteName || "";
+}
+function ensureBeerMap() {
+  if (beerMap || !window.L || typeof window.L.heatLayer !== "function" || !$("#beer-map")) return Boolean(beerMap);
+  beerMap = L.map("beer-map", {scrollWheelZoom:false, zoomControl:true}).setView([40.2,-3.7], 5);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {maxZoom:19, attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'}).addTo(beerMap);
+  beerHeatLayer = L.heatLayer([], {radius:30, blur:23, maxZoom:17, minOpacity:.36, gradient:{.25:"#ffd36e",.5:"#ffb21a",.72:"#ff6b35",1:"#a84f40"}}).addTo(beerMap);
+  beerPointLayer = L.layerGroup().addTo(beerMap);
+  return true;
+}
+function renderLocationMap() {
+  const located = locatedDrinksForPeriod(); renderLocationStats(located);
+  const empty = $("#map-empty");
+  if (!window.L || typeof window.L.heatLayer !== "function") {
+    empty.hidden = false;
+    empty.querySelector("strong").textContent = "No se pudo cargar el mapa";
+    empty.querySelector("small").textContent = "Comprueba la conexión e inténtalo de nuevo.";
+    return;
+  }
+  if (appShell?.dataset.view !== "perfil" || !ensureBeerMap()) return;
+  beerMap.invalidateSize();
+  const points = located.map((drink) => { const location = sanitizeLocation(drink.location); return [location.latitude,location.longitude,1]; });
+  beerHeatLayer.setLatLngs(points); beerPointLayer.clearLayers();
+  located.forEach((drink) => {
+    const location = sanitizeLocation(drink.location); const date = new Date(drink.date);
+    const title = location.name || "Ubicación guardada";
+    const detail = `${escapeHtml(drink.type)} · ${drink.volume} ml<br>${new Intl.DateTimeFormat("es-ES",{day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"}).format(date)}`;
+    L.circleMarker([location.latitude,location.longitude], {radius:5,weight:2,color:"#171812",fillColor:"#ffb21a",fillOpacity:.72}).bindPopup(`<strong>${escapeHtml(title)}</strong>${detail}`).addTo(beerPointLayer);
+  });
+  empty.hidden = located.length > 0;
+  if (!located.length) return;
+  const signature = `${$("#location-period").value}|${located.map((drink) => `${drink.id}:${drink.location?.latitude}:${drink.location?.longitude}`).join("|")}`;
+  if (signature === beerMapSignature) return;
+  beerMapSignature = signature;
+  if (points.length === 1) beerMap.setView(points[0], 15);
+  else beerMap.fitBounds(L.latLngBounds(points.map((point) => [point[0],point[1]])), {padding:[34,34],maxZoom:15});
+}
 function render() {
   const today = since(startOfDay()); const week = since(startOfWeek()); const month = since(startOfMonth());
   const currentYear = new Date().getFullYear();
@@ -444,7 +521,8 @@ function render() {
   els.history.innerHTML = "";
   [...state.drinks].sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0,30).forEach((drink) => {
     const date = new Date(drink.date); const li = document.createElement("li"); li.className = "history-item";
-    li.innerHTML = `<span class="beer-dot">●</span><span class="history-main"><strong>${escapeHtml(drink.type)} · ${drink.volume} ml</strong><small>${escapeHtml(drink.note || `${drink.abv}% vol.`)}</small></span><span class="history-meta">${new Intl.DateTimeFormat("es-ES",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}).format(date)}</span><button class="delete-entry" data-id="${drink.id}" aria-label="Eliminar registro">×</button>`;
+    const location = sanitizeLocation(drink.location); const locationCopy = location ? ` · 📍 ${location.name || "Con ubicación"}` : "";
+    li.innerHTML = `<span class="beer-dot">●</span><span class="history-main"><strong>${escapeHtml(drink.type)} · ${drink.volume} ml</strong><small>${escapeHtml(drink.note || `${drink.abv}% vol.`)}${escapeHtml(locationCopy)}</small></span><span class="history-meta">${new Intl.DateTimeFormat("es-ES",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}).format(date)}</span><button class="delete-entry" data-id="${drink.id}" aria-label="Eliminar registro">×</button>`;
     els.history.appendChild(li);
   });
   els.empty.hidden = state.drinks.length > 0; els.history.hidden = state.drinks.length === 0;
@@ -462,16 +540,45 @@ function render() {
   $("#profile-favorite").textContent = favorite?.type || "—";
   renderDriverProfile();
   renderBeerAlbum();
+  renderLocationMap();
 }
 function escapeHtml(value) { const node = document.createElement("span"); node.textContent = value; return node.innerHTML; }
 
-$("#open-add").addEventListener("click", () => els.addDialog.showModal());
+function resetPendingLocation() {
+  pendingLocation = null;
+  $("#location-capture").classList.remove("has-location", "is-loading");
+  $("#capture-location").disabled = false;
+  $("#location-capture-status").textContent = "Opcional · solo para esta cerveza";
+  $("#location-name").value = "";
+  $("#location-name-wrap").hidden = true;
+  $("#clear-location").hidden = true;
+}
+function captureCurrentLocation() {
+  if (!navigator.geolocation) { showToast("Este dispositivo no permite obtener la ubicación"); return; }
+  const capture = $("#location-capture"); const button = $("#capture-location");
+  capture.classList.add("is-loading"); button.disabled = true; $("#location-capture-status").textContent = "Buscando tu ubicación…";
+  navigator.geolocation.getCurrentPosition((position) => {
+    pendingLocation = sanitizeLocation({latitude:position.coords.latitude,longitude:position.coords.longitude,accuracy:position.coords.accuracy});
+    capture.classList.remove("is-loading"); capture.classList.add("has-location"); button.disabled = false;
+    $("#location-capture-status").textContent = `Ubicación lista · precisión ${pendingLocation.accuracy || "—"} m`;
+    $("#location-name-wrap").hidden = false; $("#clear-location").hidden = false; $("#location-name").focus();
+  }, (error) => {
+    capture.classList.remove("is-loading"); button.disabled = false;
+    const denied = error.code === 1;
+    $("#location-capture-status").textContent = denied ? "Permiso de ubicación no concedido" : "No hemos podido localizarte";
+    showToast(denied ? "Activa el permiso de ubicación para crear el mapa" : "No se pudo obtener la ubicación");
+  }, {enableHighAccuracy:true,timeout:12000,maximumAge:60000});
+}
+$("#open-add").addEventListener("click", () => { resetPendingLocation(); els.addDialog.showModal(); });
 $("#open-more").addEventListener("click", () => els.moreDialog.showModal());
 $("#open-settings").addEventListener("click", () => els.settingsDialog.showModal());
+$("#capture-location").addEventListener("click", captureCurrentLocation);
+$("#clear-location").addEventListener("click", resetPendingLocation);
 $("#unit-toggle").addEventListener("click", () => { volumeUnit = volumeUnit === "L" ? "mL" : "L"; render(); });
 document.querySelectorAll(".size-option").forEach((button) => button.addEventListener("click", () => {
   const addedAt = new Date();
-  const addedDrink = { id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), volume:Number(button.dataset.volume), type:button.dataset.type, abv:Number(button.dataset.abv ?? 5), date:addedAt.toISOString(), note:"" };
+  const location = pendingLocation ? sanitizeLocation({...pendingLocation,name:$("#location-name").value}) : null;
+  const addedDrink = { id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), volume:Number(button.dataset.volume), type:button.dataset.type, abv:Number(button.dataset.abv ?? 5), date:addedAt.toISOString(), note:"", ...(location ? {location} : {}) };
   state.drinks.push(addedDrink);
   if (navigator.vibrate) navigator.vibrate(18);
   save(); render(); els.addDialog.close();
@@ -505,9 +612,10 @@ document.querySelectorAll(".nav-item").forEach((button) => button.addEventListen
   const standalone = targetId === "historial" || targetId === "perfil" || targetId === "album";
   appShell.dataset.view = standalone ? targetId : "home";
   document.querySelectorAll(".nav-item").forEach((item) => item.classList.toggle("is-active", item === button));
-  if (standalone) { window.scrollTo({top:0, behavior:"smooth"}); return; }
+  if (standalone) { window.scrollTo({top:0, behavior:"smooth"}); if (targetId === "perfil") requestAnimationFrame(() => requestAnimationFrame(renderLocationMap)); return; }
   requestAnimationFrame(() => target.scrollIntoView({behavior:"smooth", block:"start"}));
 }));
+$("#location-period").addEventListener("change", () => { beerMapSignature = ""; renderLocationMap(); });
 if ("IntersectionObserver" in window) {
   const navObserver = new IntersectionObserver((entries) => { entries.forEach((entry) => { if (!entry.isIntersecting || appShell.dataset.view !== "home") return; document.querySelectorAll(".nav-item").forEach((item) => item.classList.toggle("is-active", item.dataset.target === entry.target.id)); }); }, {rootMargin:"-25% 0px -65% 0px"});
   ["inicio","formatos","datos"].forEach((id) => { const section = document.getElementById(id); if (section) navObserver.observe(section); });

@@ -1,6 +1,6 @@
-const CACHE = "birrometro-v29";
+const CACHE = "birrometro-v30";
 const FLAG_CODES = ["ar","at","au","be","br","ca","cn","cu","cz","de","dk","ec","es","fi","fr","gb","ie","in","it","jm","jp","ma","mx","nl","pe","pl","pt","sg","th","us"];
-const ASSETS = ["./", "index.html", "styles.css?v=29", "beer-catalog.js?v=29", "script.js?v=29", "firebase-sync.js?v=29", "manifest.webmanifest", "icon.svg", "icon-192.png", "icon-512.png", ...FLAG_CODES.map((code) => `assets/flags/${code}.svg`)];
+const ASSETS = ["./", "index.html", "styles.css?v=30", "beer-catalog.js?v=30", "script.js?v=30", "firebase-sync.js?v=30", "manifest.webmanifest", "icon.svg", "icon-192.png", "icon-512.png", ...FLAG_CODES.map((code) => `assets/flags/${code}.svg`)];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(ASSETS)).then(() => self.skipWaiting()));
