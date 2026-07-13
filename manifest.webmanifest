@@ -1,0 +1,10 @@
+{
+  "name": "Cervezómetro",
+  "short_name": "Cervezómetro",
+  "description": "Registra tu consumo de cerveza de forma sencilla y consciente.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f3f0e7",
+  "theme_color": "#171914",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}

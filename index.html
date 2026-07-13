@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#171914" />
+    <meta name="description" content="Cervezómetro: registra tu consumo de cerveza de forma sencilla y consciente." />
+    <title>Cervezómetro</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Cervezómetro" />
+    <link rel="icon" href="icon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="#inicio" aria-label="Cervezómetro, inicio">
+          <span class="brand-mark" aria-hidden="true">C</span>
+          <span>Cervezómetro</span>
+        </a>
+        <button class="icon-button" id="open-settings" type="button" aria-label="Abrir ajustes">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21h-4v-.08A1.7 1.7 0 0 0 9 19.37a1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.63 15 1.7 1.7 0 0 0 3.08 14H3v-4h.08A1.7 1.7 0 0 0 4.63 9a1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.63 1.7 1.7 0 0 0 10 3.08V3h4v.08A1.7 1.7 0 0 0 15 4.63a1.7 1.7 0 0 0 1.88-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0 0 19.37 9 1.7 1.7 0 0 0 20.92 10H21v4h-.08A1.7 1.7 0 0 0 19.4 15Z"/></svg>
+        </button>
+      </header>
+
+      <main id="app-main">
+        <section class="today-card" id="inicio" aria-labelledby="today-title">
+          <div class="card-heading">
+            <div>
+              <p class="eyebrow">Tu marcador · <span id="marker-year">2026</span></p>
+              <h2 id="year-title"><span id="year-count">0</span> <small>cervezas<br />este año</small></h2>
+            </div>
+            <span class="today-mark" aria-hidden="true">C</span>
+          </div>
+          <div class="today-meta">
+            <span><b id="today-count">0</b><small>hoy</small></span>
+            <span><b id="hero-week-count">0</b><small>esta semana</small></span>
+            <span><b id="hero-streak-count">0</b><small>racha</small></span>
+          </div>
+        </section>
+
+        <div class="action-dock">
+          <button class="add-button" id="open-add" type="button" aria-haspopup="dialog">
+            <span class="add-spark" aria-hidden="true">+</span>
+            <span class="add-copy"><small>Registrar ahora</small><strong>+1 cerveza</strong><em>Formato y hora en dos toques</em></span>
+            <span class="add-beer" aria-hidden="true"><i></i><b></b></span>
+          </button>
+          <button class="more-button" id="open-more" type="button" aria-haspopup="dialog" aria-label="Más opciones">•••</button>
+        </div>
+
+        <section class="stats-section" aria-labelledby="stats-title">
+          <div class="section-title">
+            <div><p class="eyebrow">Tu ritmo</p><h2 id="stats-title">Resumen</h2></div>
+            <button class="text-button" id="export-data" type="button">Exportar</button>
+          </div>
+          <div class="stats-grid">
+            <article><span>Esta semana</span><strong id="week-count">0</strong><small>cervezas</small></article>
+            <article><span>Este mes</span><strong id="month-count">0</strong><small>cervezas</small></article>
+            <article><span>Racha actual</span><strong id="streak-count">0</strong><small>días con registros</small></article>
+            <article><span>Alcohol puro</span><strong id="alcohol-total">0</strong><small>unidades esta semana</small></article>
+          </div>
+        </section>
+
+        <section class="formats-section" id="formatos" aria-labelledby="formats-title">
+          <div class="section-title">
+            <div><p class="eyebrow">Tu selección</p><h2 id="formats-title">Formatos consumidos</h2></div>
+            <span class="section-badge" id="formats-total">0 en total</span>
+          </div>
+          <div class="formats-overview">
+            <div class="donut-wrap">
+              <div class="format-donut" id="format-donut"><svg viewBox="0 0 120 120" aria-label="Distribución por formatos"></svg><div><strong id="favorite-percent">0%</strong><small>favorito</small></div></div>
+              <div class="donut-tooltip" id="donut-tooltip" role="status">Toca un segmento para identificarlo</div>
+              <p><span id="favorite-format">Sin datos</span><small>Tu formato más habitual</small></p>
+            </div>
+            <div class="format-ranking" id="format-ranking"></div>
+          </div>
+        </section>
+
+        <section class="volume-section" aria-labelledby="volume-title">
+          <div class="section-title"><div><p class="eyebrow">Cantidad real</p><h2 id="volume-title">Volumen consumido</h2></div><button class="unit-toggle" id="unit-toggle" type="button" aria-label="Cambiar entre litros y mililitros">L</button></div>
+          <div class="volume-grid">
+            <article><span>Hoy</span><strong id="volume-day">0</strong><small class="volume-unit">L</small></article>
+            <article><span>Semana</span><strong id="volume-week">0</strong><small class="volume-unit">L</small></article>
+            <article><span>Mes</span><strong id="volume-month">0</strong><small class="volume-unit">L</small></article>
+            <article><span>Año</span><strong id="volume-year">0</strong><small class="volume-unit">L</small></article>
+          </div>
+        </section>
+
+        <section class="patterns-section" aria-labelledby="patterns-title">
+          <div class="section-title"><div><p class="eyebrow">Tus patrones</p><h2 id="patterns-title">Cuándo bebes</h2></div><span class="peak-label" id="peak-label">Sin datos</span></div>
+          <div class="pattern-card">
+            <h3>Por día de la semana</h3>
+            <div class="mini-chart" id="weekday-chart" aria-label="Cervezas por día de la semana"></div>
+          </div>
+          <div class="pattern-card">
+            <div class="chart-card-head"><h3>Por hora del día</h3><span>00–23 h</span></div>
+            <div class="chart-scroll"><div class="mini-chart mini-chart--24" id="hour-chart" aria-label="Cervezas por cada hora del día"></div></div>
+          </div>
+        </section>
+
+        <section class="insights-section" id="datos" aria-labelledby="insights-title">
+          <div class="section-title"><div><p class="eyebrow">Vista general</p><h2 id="insights-title">Tus datos</h2></div><span class="section-badge">Desde ene. 2026</span></div>
+          <div class="insight-grid">
+            <article><span class="insight-icon">★</span><small>Formato favorito</small><strong id="insight-favorite">—</strong></article>
+            <article><span class="insight-icon">↗</span><small>Día más activo</small><strong id="insight-day">—</strong></article>
+            <article><span class="insight-icon">≈</span><small>Media semanal</small><strong id="insight-average">0</strong></article>
+          </div>
+          <div class="trend-card">
+            <div class="trend-head"><div><h3>Evolución mensual</h3><p>Últimos seis meses</p></div><strong id="trend-total">0</strong></div>
+            <div class="trend-chart" id="trend-chart" aria-label="Consumo durante los últimos seis meses"></div>
+          </div>
+        </section>
+
+        <section class="history-section" id="historial" aria-labelledby="history-title">
+          <div class="section-title"><div><p class="eyebrow">Últimos registros</p><h2 id="history-title">Historial</h2></div></div>
+          <div class="empty-state" id="empty-state">
+            <span>○</span><p>Aún no hay cervezas registradas.<br />La primera aparecerá aquí.</p>
+          </div>
+          <ul class="history-list" id="history-list"></ul>
+        </section>
+      </main>
+      <footer><span>Bebe con cabeza.</span><span>Tus datos se guardan en este dispositivo.</span></footer>
+      <nav class="bottom-nav" aria-label="Navegación principal">
+        <button class="nav-item is-active" type="button" data-target="inicio"><span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M3 10.8 12 3l9 7.8v9.1a1.1 1.1 0 0 1-1.1 1.1H15v-6H9v6H4.1A1.1 1.1 0 0 1 3 19.9v-9.1Z"/></svg></span><small>Inicio</small></button>
+        <button class="nav-item" type="button" data-target="formatos"><span class="nav-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v8.5l6.8 5"/></svg></span><small>Formatos</small></button>
+        <button class="nav-item" type="button" data-target="datos"><span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M5 20V10M12 20V4M19 20v-7"/></svg></span><small>Estadísticas</small></button>
+        <button class="nav-item" type="button" data-target="historial"><span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M8 6h12M8 12h12M8 18h12"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg></span><small>Historial</small></button>
+      </nav>
+    </div>
+
+    <dialog id="add-dialog" class="size-dialog">
+      <div class="size-sheet">
+        <div class="sheet-handle" aria-hidden="true"></div>
+        <div class="dialog-head"><div><p class="eyebrow">+1 cerveza</p><h2>¿Qué formato?</h2></div><button class="close-button" type="button" data-close-dialog aria-label="Cerrar">×</button></div>
+        <p class="dialog-copy">Guardaremos automáticamente el día y la hora.</p>
+        <div class="size-options" role="group" aria-label="Elige el formato de cerveza">
+          <button class="size-option" type="button" data-volume="1000" data-type="Litro"><span class="size-icon size-icon--litro" aria-hidden="true">1L</span><span><strong>Litro</strong><small>1.000 ml</small></span><b>+</b></button>
+          <button class="size-option" type="button" data-volume="330" data-type="Lata"><span class="size-icon size-icon--slim" aria-hidden="true">33</span><span><strong>Lata</strong><small>330 ml · estilizada</small></span><b>+</b></button>
+          <button class="size-option" type="button" data-volume="330" data-type="Lata gordita"><span class="size-icon size-icon--wide" aria-hidden="true">33</span><span><strong>Lata gordita</strong><small>330 ml · formato ancho</small></span><b>+</b></button>
+          <button class="size-option" type="button" data-volume="330" data-type="Sin" data-abv="0"><span class="size-icon size-icon--slim size-icon--free" aria-hidden="true">0%</span><span><strong>Sin</strong><small>330 ml · sin alcohol</small></span><b>+</b></button>
+          <button class="size-option" type="button" data-volume="300" data-type="Copa"><span class="size-icon size-icon--glass" aria-hidden="true">30</span><span><strong>Copa</strong><small>300 ml</small></span><b>+</b></button>
+          <button class="size-option" type="button" data-volume="200" data-type="Cortá"><span class="size-icon size-icon--glass" aria-hidden="true">20</span><span><strong>Cortá</strong><small>200 ml</small></span><b>+</b></button>
+          <button class="size-option" type="button" data-volume="330" data-type="Tercio"><span class="size-icon size-icon--bottle" aria-hidden="true">33</span><span><strong>Tercio</strong><small>330 ml</small></span><b>+</b></button>
+          <button class="size-option" type="button" data-volume="250" data-type="Botellín"><span class="size-icon size-icon--bottle" aria-hidden="true">25</span><span><strong>Botellín</strong><small>250 ml</small></span><b>+</b></button>
+          <button class="size-option" type="button" data-volume="568" data-type="Pinta"><span class="size-icon size-icon--glass" aria-hidden="true">56</span><span><strong>Pinta</strong><small>568 ml</small></span><b>+</b></button>
+          <button class="size-option" type="button" data-volume="200" data-type="Caña"><span class="size-icon size-icon--glass" aria-hidden="true">20</span><span><strong>Caña</strong><small>200 ml</small></span><b>+</b></button>
+          <button class="size-option" type="button" data-volume="400" data-type="Grande"><span class="size-icon size-icon--cider" aria-hidden="true">40</span><span><strong>Grande</strong><small>400 ml · vaso de sidra</small></span><b>+</b></button>
+          <button class="size-option" type="button" data-volume="500" data-type="Yonkilata"><span class="size-icon size-icon--tall" aria-hidden="true">50</span><span><strong>Yonkilata</strong><small>500 ml</small></span><b>+</b></button>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog id="settings-dialog">
+      <div class="settings-panel">
+        <div class="dialog-head"><div><p class="eyebrow">Privacidad</p><h2>Tus datos</h2></div><button class="close-button" type="button" data-close-dialog aria-label="Cerrar">×</button></div>
+        <p class="dialog-copy">Todo se guarda únicamente en este dispositivo. Puedes descargar una copia cuando quieras.</p>
+        <button class="primary-button" id="export-data-settings" type="button">Exportar copia JSON</button>
+        <button class="danger-button" id="clear-data" type="button">Borrar todos mis datos</button>
+      </div>
+    </dialog>
+
+    <dialog id="more-dialog" class="size-dialog">
+      <div class="size-sheet">
+        <div class="sheet-handle" aria-hidden="true"></div>
+        <div class="dialog-head"><div><p class="eyebrow">Acciones rápidas</p><h2>Más opciones</h2></div><button class="close-button" type="button" data-close-dialog aria-label="Cerrar">×</button></div>
+        <div class="quick-actions">
+          <button type="button" id="open-late"><span>◷</span><strong>Añadir cerveza olvidada</strong><small>Elige una fecha y hora anterior</small></button>
+          <button type="button" id="undo-last"><span>↩</span><strong>Deshacer la última</strong><small id="undo-hint">No hay registros</small></button>
+          <button type="button" id="go-patterns"><span>▥</span><strong>Ver mis patrones</strong><small>Días y horas más frecuentes</small></button>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog id="late-dialog" class="size-dialog">
+      <form id="late-form" class="size-sheet">
+        <div class="sheet-handle" aria-hidden="true"></div>
+        <div class="dialog-head"><div><p class="eyebrow">Registro manual</p><h2>Cerveza olvidada</h2></div><button class="close-button" type="button" data-close-dialog aria-label="Cerrar">×</button></div>
+        <p class="dialog-copy">Selecciona el momento y el formato.</p>
+        <label>Fecha y hora<input type="datetime-local" name="date" id="late-date" required /></label>
+        <label>Formato<select name="format"><option value="1000|Litro|5">Litro · 1.000 ml</option><option value="330|Lata|5" selected>Lata · 330 ml</option><option value="330|Lata gordita|5">Lata gordita · 330 ml</option><option value="330|Sin|0">Sin · 330 ml · 0 %</option><option value="300|Copa|5">Copa · 300 ml</option><option value="200|Cortá|5">Cortá · 200 ml</option><option value="330|Tercio|5">Tercio · 330 ml</option><option value="250|Botellín|5">Botellín · 250 ml</option><option value="568|Pinta|5">Pinta · 568 ml</option><option value="200|Caña|5">Caña · 200 ml</option><option value="400|Grande|5">Grande · 400 ml</option><option value="500|Yonkilata|5">Yonkilata · 500 ml</option></select></label>
+        <button class="primary-button" type="submit">Añadir al historial</button>
+      </form>
+    </dialog>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="script.js"></script>
+  </body>
+</html>
