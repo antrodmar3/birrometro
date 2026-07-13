@@ -15,8 +15,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="assets/vendor/leaflet.css?v=31" />
-    <link rel="stylesheet" href="styles.css?v=31" />
+    <link rel="stylesheet" href="assets/vendor/leaflet.css?v=32" />
+    <link rel="stylesheet" href="styles.css?v=32" />
   </head>
   <body>
     <div class="app-shell" data-view="home" data-auth="pending">
@@ -222,18 +222,18 @@
         <div class="dialog-head"><div><p class="eyebrow">+1 cerveza</p><h2>¿Qué formato?</h2></div><button class="close-button" type="button" data-close-dialog aria-label="Cerrar">×</button></div>
         <p class="dialog-copy" id="add-dialog-copy">Guardaremos automáticamente el día, la hora y la ubicación.</p>
         <div class="size-options" role="group" aria-label="Elige el formato de cerveza">
-          <button class="size-option" type="button" data-volume="1000" data-type="Litro"><span class="size-icon size-icon--litro" aria-hidden="true">1L</span><span><strong>Litro</strong><small>1.000 ml</small></span><b>+</b></button>
-          <button class="size-option" type="button" data-volume="330" data-type="Lata"><span class="size-icon size-icon--slim" aria-hidden="true">33</span><span><strong>Lata</strong><small>330 ml · estilizada</small></span><b>+</b></button>
-          <button class="size-option" type="button" data-volume="330" data-type="Lata gordita"><span class="size-icon size-icon--wide" aria-hidden="true">33</span><span><strong>Lata gordita</strong><small>330 ml · formato ancho</small></span><b>+</b></button>
-          <button class="size-option" type="button" data-volume="330" data-type="Sin" data-abv="0"><span class="size-icon size-icon--slim size-icon--free" aria-hidden="true">0%</span><span><strong>Sin</strong><small>330 ml · sin alcohol</small></span><b>+</b></button>
+          <button class="size-option" type="button" data-volume="1000" data-type="Litro"><span class="size-icon size-icon--image" aria-hidden="true"><img src="assets/menu-icons/litro.webp" alt="" /></span><span><strong>Litro</strong><small>1.000 ml</small></span><b>+</b></button>
+          <button class="size-option" type="button" data-volume="330" data-type="Lata"><span class="size-icon size-icon--image" aria-hidden="true"><img src="assets/menu-icons/lata.webp" alt="" /></span><span><strong>Lata</strong><small>330 ml · estilizada</small></span><b>+</b></button>
+          <button class="size-option" type="button" data-volume="330" data-type="Lata gordita"><span class="size-icon size-icon--image" aria-hidden="true"><img src="assets/menu-icons/lata-gordita.webp" alt="" /></span><span><strong>Lata gordita</strong><small>330 ml · formato ancho</small></span><b>+</b></button>
+          <button class="size-option" type="button" data-volume="330" data-type="Sin" data-abv="0"><span class="size-icon size-icon--image" aria-hidden="true"><img src="assets/menu-icons/sin.webp" alt="" /></span><span><strong>Sin</strong><small>330 ml · sin alcohol</small></span><b>+</b></button>
           <button class="size-option" type="button" data-volume="300" data-type="Copa"><span class="size-icon size-icon--copa" aria-hidden="true">30</span><span><strong>Copa</strong><small>300 ml</small></span><b>+</b></button>
           <button class="size-option" type="button" data-volume="200" data-type="Cortá"><span class="size-icon size-icon--corta" aria-hidden="true">20</span><span><strong>Cortá</strong><small>200 ml</small></span><b>+</b></button>
-          <button class="size-option" type="button" data-volume="330" data-type="Tercio"><span class="size-icon size-icon--bottle size-icon--tercio" aria-hidden="true">33</span><span><strong>Tercio</strong><small>330 ml</small></span><b>+</b></button>
-          <button class="size-option" type="button" data-volume="250" data-type="Botellín"><span class="size-icon size-icon--bottle size-icon--botellin" aria-hidden="true">25</span><span><strong>Botellín</strong><small>250 ml</small></span><b>+</b></button>
-          <button class="size-option" type="button" data-volume="568" data-type="Pinta"><span class="size-icon size-icon--pinta" aria-hidden="true">56</span><span><strong>Pinta</strong><small>568 ml</small></span><b>+</b></button>
+          <button class="size-option" type="button" data-volume="330" data-type="Tercio"><span class="size-icon size-icon--image" aria-hidden="true"><img src="assets/menu-icons/tercio.webp" alt="" /></span><span><strong>Tercio</strong><small>330 ml</small></span><b>+</b></button>
+          <button class="size-option" type="button" data-volume="250" data-type="Botellín"><span class="size-icon size-icon--image" aria-hidden="true"><img src="assets/menu-icons/botellin.webp" alt="" /></span><span><strong>Botellín</strong><small>250 ml</small></span><b>+</b></button>
+          <button class="size-option" type="button" data-volume="568" data-type="Pinta"><span class="size-icon size-icon--image" aria-hidden="true"><img src="assets/menu-icons/pinta.webp" alt="" /></span><span><strong>Pinta</strong><small>568 ml</small></span><b>+</b></button>
           <button class="size-option" type="button" data-volume="200" data-type="Caña"><span class="size-icon size-icon--cana" aria-hidden="true">20</span><span><strong>Caña</strong><small>200 ml</small></span><b>+</b></button>
           <button class="size-option" type="button" data-volume="400" data-type="Grande"><span class="size-icon size-icon--cider" aria-hidden="true">40</span><span><strong>Grande</strong><small>400 ml · vaso de sidra</small></span><b>+</b></button>
-          <button class="size-option" type="button" data-volume="500" data-type="Yonkilata"><span class="size-icon size-icon--tall" aria-hidden="true">50</span><span><strong>Yonkilata</strong><small>500 ml</small></span><b>+</b></button>
+          <button class="size-option" type="button" data-volume="500" data-type="Yonkilata"><span class="size-icon size-icon--image" aria-hidden="true"><img src="assets/menu-icons/yonkilata.webp" alt="" /></span><span><strong>Yonkilata</strong><small>500 ml</small></span><b>+</b></button>
         </div>
       </div>
     </dialog>
@@ -298,10 +298,10 @@
     </dialog>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script src="assets/vendor/leaflet.js?v=31"></script>
-    <script src="assets/vendor/leaflet-heat.js?v=31"></script>
-    <script src="beer-catalog.js?v=31"></script>
-    <script type="module" src="firebase-sync.js?v=31"></script>
-    <script src="script.js?v=31"></script>
+    <script src="assets/vendor/leaflet.js?v=32"></script>
+    <script src="assets/vendor/leaflet-heat.js?v=32"></script>
+    <script src="beer-catalog.js?v=32"></script>
+    <script type="module" src="firebase-sync.js?v=32"></script>
+    <script src="script.js?v=32"></script>
   </body>
 </html>

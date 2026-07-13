@@ -222,13 +222,15 @@ input, select { display: block; width: 100%; margin-top: 7px; padding: 13px 14px
 .danger-button { margin-top: 8px; background: transparent; color: var(--red); }
 .size-options { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
 .size-options.is-locating { pointer-events: none; opacity: .58; }
-.size-option { min-height: 83px; padding: 11px; display: grid; grid-template-columns: 45px 1fr 25px; align-items: center; gap: 9px; border: 1px solid var(--line); border-radius: 16px; background: var(--card); color: var(--ink); text-align: left; cursor: pointer; }
+.size-option { min-height: 83px; padding: 11px; display: grid; grid-template-columns: 54px 1fr 25px; align-items: center; gap: 9px; border: 1px solid var(--line); border-radius: 16px; background: var(--card); color: var(--ink); text-align: left; cursor: pointer; }
 .size-option:hover { border-color: var(--amber); background: #fff9e9; }
 .size-option strong, .size-option small { display: block; }
 .size-option strong { font: 12px "Space Grotesk"; }
 .size-option small { margin-top: 3px; color: var(--muted); font-size: 8px; }
 .size-option > b { display: grid; place-items: center; width: 25px; height: 25px; border-radius: 9px; background: var(--amber); }
 .size-icon { position: relative; width: 32px; height: 44px; margin: auto; display: grid; place-items: center; border: 3px solid var(--ink); border-radius: 5px; background: linear-gradient(90deg, #f3a900, var(--amber) 70%); font-size: 8px; font-weight: 900; }
+.size-icon--image { width: 50px; height: 58px; overflow: hidden; border: 1px solid #ebe7dc; border-radius: 13px; background: var(--card); box-shadow: 0 5px 12px rgba(23,24,18,.08); }
+.size-icon--image img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .size-icon--litro { width: 34px; height: 47px; border-radius: 5px 5px 9px 9px; }
 .size-icon--litro::after { content: ""; position: absolute; right: -13px; top: 9px; width: 11px; height: 23px; border: 3px solid var(--ink); border-left: 0; border-radius: 0 9px 9px 0; }
 .size-icon--tall, .size-icon--slim, .size-icon--wide { box-shadow: inset 5px 0 rgba(255,255,255,.18); }
