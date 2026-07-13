@@ -143,7 +143,7 @@ section { scroll-margin-top: 90px; }
 .trend-head p { margin: 3px 0 0; color: var(--muted); font-size: 9px; }
 .trend-head > strong { font: 13px "Space Grotesk"; }
 .trend-chart { height: 175px; }
-.trend-bar i { background: linear-gradient(180deg, #ff8b5e, #ff5d29); }
+.trend-bar i { background: linear-gradient(180deg, var(--amber), #e99700); }
 
 .empty-state { padding: 44px; border: 1px dashed #cbc6b9; border-radius: 20px; color: var(--muted); text-align: center; }
 .empty-state span { font-size: 30px; }
@@ -188,16 +188,27 @@ input, select { display: block; width: 100%; margin-top: 7px; padding: 13px 14px
 .size-option strong { font: 12px "Space Grotesk"; }
 .size-option small { margin-top: 3px; color: var(--muted); font-size: 8px; }
 .size-option > b { display: grid; place-items: center; width: 25px; height: 25px; border-radius: 9px; background: var(--amber); }
-.size-icon { width: 32px; height: 44px; margin: auto; display: grid; place-items: center; border: 3px solid var(--ink); border-radius: 5px; background: var(--amber); font-size: 8px; font-weight: 900; }
-.size-icon--litro { width: 38px; height: 48px; border-radius: 5px 5px 10px 10px; }
-.size-icon--tall { height: 50px; }
-.size-icon--slim { width: 27px; height: 51px; }
-.size-icon--wide { width: 39px; height: 40px; border-radius: 7px; }
+.size-icon { position: relative; width: 32px; height: 44px; margin: auto; display: grid; place-items: center; border: 3px solid var(--ink); border-radius: 5px; background: linear-gradient(90deg, #f3a900, var(--amber) 70%); font-size: 8px; font-weight: 900; }
+.size-icon--litro { width: 34px; height: 47px; border-radius: 5px 5px 9px 9px; }
+.size-icon--litro::after { content: ""; position: absolute; right: -13px; top: 9px; width: 11px; height: 23px; border: 3px solid var(--ink); border-left: 0; border-radius: 0 9px 9px 0; }
+.size-icon--tall, .size-icon--slim, .size-icon--wide { box-shadow: inset 5px 0 rgba(255,255,255,.18); }
+.size-icon--tall::before, .size-icon--slim::before, .size-icon--wide::before, .size-icon--free::before { content: ""; position: absolute; left: 3px; right: 3px; top: 3px; height: 3px; border-radius: 50%; background: rgba(23,24,18,.55); }
+.size-icon--tall { width: 30px; height: 53px; border-radius: 5px 5px 7px 7px; }
+.size-icon--slim { width: 25px; height: 49px; border-radius: 5px; }
+.size-icon--wide { width: 39px; height: 38px; border-radius: 8px; }
 .size-icon--free { border-color: #22533d; background: #bfe7cf; color: #19442f; }
-.size-icon--glass { clip-path: polygon(7% 0,93% 0,82% 100%,18% 100%); border-radius: 4px 4px 10px 10px; }
+.size-icon--copa { width: 40px; height: 49px; border: 0; background: transparent; font-size: 0; }
+.size-icon--copa::before { content: ""; position: absolute; left: 5px; top: 1px; width: 30px; height: 27px; border: 3px solid var(--ink); border-radius: 5px 5px 15px 15px; background: linear-gradient(to top, var(--amber) 0 68%, #fff1c9 68%); clip-path: polygon(4% 0,96% 0,76% 100%,24% 100%); }
+.size-icon--copa::after { content: ""; position: absolute; left: 18px; top: 27px; width: 4px; height: 16px; border-radius: 3px; background: var(--ink); box-shadow: -8px 14px 0 2px var(--ink); }
+.size-icon--corta { width: 35px; height: 33px; margin-top: 12px; clip-path: polygon(4% 0,96% 0,84% 100%,16% 100%); border-radius: 4px 4px 9px 9px; }
+.size-icon--pinta { width: 37px; height: 49px; clip-path: polygon(6% 0,94% 0,88% 24%,96% 54%,82% 100%,18% 100%,4% 54%,12% 24%); border-radius: 5px 5px 10px 10px; }
+.size-icon--cana { width: 25px; height: 46px; clip-path: polygon(4% 0,96% 0,82% 100%,18% 100%); border-radius: 3px 3px 8px 8px; }
 .size-icon--cider { width: 41px; height: 48px; clip-path: polygon(4% 0,96% 0,82% 100%,18% 100%); border-radius: 2px 2px 12px 12px; }
-.size-icon--bottle { position: relative; width: 27px; margin-top: 7px; border-radius: 7px 7px 10px 10px; }
+.size-icon--bottle { width: 27px; margin-top: 7px; border-radius: 8px 8px 10px 10px; background: linear-gradient(90deg, #956828, #c9913e 70%); }
 .size-icon--bottle::before { content: ""; position: absolute; top: -11px; width: 14px; height: 11px; border: 3px solid var(--ink); border-bottom: 0; border-radius: 3px 3px 0 0; background: var(--amber); }
+.size-icon--tercio { height: 45px; }
+.size-icon--botellin { width: 23px; height: 38px; margin-top: 11px; }
+.size-icon--botellin::before { width: 11px; height: 10px; top: -10px; }
 .quick-actions { display: grid; gap: 9px; }
 .quick-actions button { width: 100%; min-height: 72px; padding: 13px; display: grid; grid-template-columns: 42px 1fr; column-gap: 11px; border: 1px solid var(--line); border-radius: 15px; background: var(--card); color: var(--ink); text-align: left; cursor: pointer; }
 .quick-actions button > span { grid-row: 1/3; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: #fff0cf; }

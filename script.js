@@ -131,7 +131,15 @@ function getFormatStats() {
     const current = stats.get(drink.type) || {type:drink.type, count:0, volume:0};
     current.count += 1; current.volume += Number(drink.volume || 0); stats.set(drink.type, current);
   });
-  return [...stats.values()].sort((a,b) => b.count - a.count);
+  return [...stats.values()].sort((a,b) => b.count - a.count || a.type.localeCompare(b.type, "es", {sensitivity:"base"}));
+}
+function reorderFormatOptions() {
+  const counts = new Map();
+  state.drinks.forEach((drink) => counts.set(drink.type, (counts.get(drink.type) || 0) + 1));
+  const container = $(".size-options");
+  [...container.querySelectorAll(".size-option")]
+    .sort((a, b) => (counts.get(b.dataset.type) || 0) - (counts.get(a.dataset.type) || 0) || a.dataset.type.localeCompare(b.dataset.type, "es", {sensitivity:"base"}))
+    .forEach((option) => container.appendChild(option));
 }
 function renderFormatStats() {
   const formats = getFormatStats(); const total = state.drinks.length || 1;
@@ -198,6 +206,7 @@ function render() {
   renderPatterns();
   renderVolumes(today, week, month);
   renderFormatStats();
+  reorderFormatOptions();
   renderInsights();
 }
 function escapeHtml(value) { const node = document.createElement("span"); node.textContent = value; return node.innerHTML; }
