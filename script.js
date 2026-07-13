@@ -111,6 +111,17 @@ let volumeUnit = "L";
 const beerCatalog = CLOSED_BEER_CATALOG;
 let albumFilter = "all";
 const beerCatalogById = new Map(beerCatalog.map((beer) => [beer.id, beer]));
+const DRIVER_WINDOW_MS = 2 * 60 * 60 * 1000;
+const ETHANOL_DENSITY = 0.789;
+function defaultDriverProfile() { return {enabled:true,weight:null,height:null}; }
+function sanitizeDriverProfile(value) {
+  const weight = Number(value?.weight); const height = Number(value?.height);
+  return {
+    enabled:value?.enabled !== false,
+    weight:weight >= 35 && weight <= 250 ? weight : null,
+    height:height >= 120 && height <= 230 ? height : null
+  };
+}
 function sanitizeAlbum(entries) {
   const catalogByName = new Map(beerCatalog.map((beer) => [`${beer.name}|${beer.country}`.toLocaleLowerCase("es"), beer]));
   return (Array.isArray(entries) ? entries : []).map((entry) => {
@@ -119,34 +130,73 @@ function sanitizeAlbum(entries) {
   }).filter(Boolean);
 }
 state.album = sanitizeAlbum(state.album);
+state.driver = sanitizeDriverProfile(state.driver);
 const $ = (selector) => document.querySelector(selector);
 const els = {
   todayCount: $("#today-count"), yearCount: $("#year-count"),
   weekCount: $("#week-count"), monthCount: $("#month-count"), streak: $("#streak-count"),
   history: $("#history-list"),
-  empty: $("#empty-state"), addDialog: $("#add-dialog"), settingsDialog: $("#settings-dialog"), moreDialog: $("#more-dialog"), lateDialog: $("#late-dialog"),
+  empty: $("#empty-state"), addDialog: $("#add-dialog"), settingsDialog: $("#settings-dialog"), moreDialog: $("#more-dialog"), lateDialog: $("#late-dialog"), driverDialog: $("#driver-alert-dialog"),
   toast: $("#toast")
 };
 
 function loadState() {
-  return { drinks: [], imports: {}, album: [] };
+  return { drinks: [], imports: {}, album: [], driver:defaultDriverProfile() };
 }
 function userStorageKey(uid) { return `birrometro-user-${uid}`; }
 function readUserState(uid) {
   try {
     const saved = JSON.parse(localStorage.getItem(userStorageKey(uid)) || "{}");
-    return {drinks:Array.isArray(saved.drinks) ? saved.drinks : [],imports:saved.imports || {},album:sanitizeAlbum(saved.album)};
-  } catch { return {drinks:[],imports:{},album:[]}; }
+    return {drinks:Array.isArray(saved.drinks) ? saved.drinks : [],imports:saved.imports || {},album:sanitizeAlbum(saved.album),driver:sanitizeDriverProfile(saved.driver)};
+  } catch { return {drinks:[],imports:{},album:[],driver:defaultDriverProfile()}; }
 }
 function applyState(nextState) {
   state.drinks = Array.isArray(nextState?.drinks) ? nextState.drinks : [];
   state.imports = nextState?.imports || {};
   state.album = sanitizeAlbum(nextState?.album);
+  state.driver = sanitizeDriverProfile(nextState?.driver);
 }
 function save() {
   if (!activeUserId) return;
   localStorage.setItem(userStorageKey(activeUserId), JSON.stringify(state));
   window.dispatchEvent(new CustomEvent("birrometro-state-save", {detail:state}));
+}
+function alcoholGrams(drink) {
+  return Math.max(0, Number(drink?.volume || 0) * (Number(drink?.abv || 0) / 100) * ETHANOL_DENSITY);
+}
+function personalizedDriverThreshold() {
+  const {weight,height} = state.driver || {};
+  if (!weight || !height) return null;
+  const bodySurfaceArea = Math.sqrt((height * weight) / 3600);
+  return Math.min(20, Math.max(14, 18 * (bodySurfaceArea / 1.8)));
+}
+function recentDriverStats(now = Date.now()) {
+  const drinks = state.drinks.filter((drink) => {
+    const timestamp = new Date(drink.date).getTime();
+    return Number(drink.abv || 0) > 0 && timestamp >= now - DRIVER_WINDOW_MS && timestamp <= now + 60000;
+  });
+  return {drinks, grams:drinks.reduce((sum, drink) => sum + alcoholGrams(drink), 0)};
+}
+function maybeShowDriverAlert(addedDrink) {
+  if (!state.driver?.enabled || Number(addedDrink?.abv || 0) <= 0) return;
+  const now = Date.now(); const addedAt = new Date(addedDrink.date).getTime();
+  if (!Number.isFinite(addedAt) || addedAt < now - DRIVER_WINDOW_MS || addedAt > now + 60000) return;
+  const stats = recentDriverStats(now); const threshold = personalizedDriverThreshold();
+  const triggered = threshold ? stats.grams >= threshold : stats.drinks.length >= 2 || stats.grams >= 20;
+  if (!triggered || els.driverDialog.open) return;
+  $("#driver-alert-copy").textContent = `Has registrado ${stats.drinks.length} ${stats.drinks.length === 1 ? "consumición alcohólica" : "consumiciones alcohólicas"} (${stats.grams.toLocaleString("es-ES", {maximumFractionDigits:1})} g aprox. de alcohol) en las últimas 2 horas.`;
+  $("#driver-alert-basis").textContent = threshold ? "Aviso personalizado con el peso y la estatura indicados. No es una estimación de alcoholemia." : "Aviso por defecto al alcanzar 2 consumiciones en poco tiempo; un formato grande puede activar el aviso antes. Añade peso y estatura en Mi perfil para personalizar la sensibilidad.";
+  if (navigator.vibrate) navigator.vibrate([90,60,90]);
+  els.driverDialog.showModal();
+}
+function renderDriverProfile() {
+  const profile = state.driver || defaultDriverProfile(); const threshold = personalizedDriverThreshold();
+  $("#driver-enabled").checked = profile.enabled;
+  $("#driver-weight").value = profile.weight ?? "";
+  $("#driver-height").value = profile.height ?? "";
+  $("#driver-status").textContent = profile.enabled ? "Activo" : "Pausado";
+  $("#driver-status").classList.toggle("is-paused", !profile.enabled);
+  $("#driver-rule-copy").textContent = !profile.enabled ? "Las alertas están pausadas. Puedes reactivarlas en cualquier momento." : threshold ? `Sensibilidad personalizada con una referencia preventiva de ${threshold.toLocaleString("es-ES", {maximumFractionDigits:1})} g acumulados en 2 horas. No es un límite seguro.` : "Sin datos físicos: aviso por defecto tras 2 consumiciones en 2 horas; un formato grande puede avisar antes.";
 }
 function importInitialTotals() {
   if (state.imports.initialTally207) return;
@@ -410,6 +460,7 @@ function render() {
   $("#profile-total").textContent = state.drinks.length;
   $("#profile-liters").textContent = `${(state.drinks.reduce((sum, drink) => sum + Number(drink.volume || 0), 0) / 1000).toLocaleString("es-ES", {maximumFractionDigits:1})} L`;
   $("#profile-favorite").textContent = favorite?.type || "—";
+  renderDriverProfile();
   renderBeerAlbum();
 }
 function escapeHtml(value) { const node = document.createElement("span"); node.textContent = value; return node.innerHTML; }
@@ -420,23 +471,34 @@ $("#open-settings").addEventListener("click", () => els.settingsDialog.showModal
 $("#unit-toggle").addEventListener("click", () => { volumeUnit = volumeUnit === "L" ? "mL" : "L"; render(); });
 document.querySelectorAll(".size-option").forEach((button) => button.addEventListener("click", () => {
   const addedAt = new Date();
-  state.drinks.push({ id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), volume:Number(button.dataset.volume), type:button.dataset.type, abv:Number(button.dataset.abv ?? 5), date:addedAt.toISOString(), note:"" });
+  const addedDrink = { id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), volume:Number(button.dataset.volume), type:button.dataset.type, abv:Number(button.dataset.abv ?? 5), date:addedAt.toISOString(), note:"" };
+  state.drinks.push(addedDrink);
   if (navigator.vibrate) navigator.vibrate(18);
   save(); render(); els.addDialog.close();
   showToast(`${button.dataset.type} añadida · ${new Intl.DateTimeFormat("es-ES", {hour:"2-digit", minute:"2-digit"}).format(addedAt)}`);
+  maybeShowDriverAlert(addedDrink);
 }));
 $("#open-late").addEventListener("click", () => { els.moreDialog.close(); $("#late-date").value = localDateTime(); els.lateDialog.showModal(); });
 $("#late-form").addEventListener("submit", (event) => {
   event.preventDefault(); const data = new FormData(event.currentTarget); const [volume, type, abv = "5"] = String(data.get("format")).split("|");
-  state.drinks.push({ id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), volume:Number(volume), type, abv:Number(abv), date:new Date(String(data.get("date"))).toISOString(), note:"" });
+  const addedDrink = { id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), volume:Number(volume), type, abv:Number(abv), date:new Date(String(data.get("date"))).toISOString(), note:"" };
+  state.drinks.push(addedDrink);
   if (navigator.vibrate) navigator.vibrate(18);
   save(); render(); els.lateDialog.close(); showToast("Cerveza añadida al historial");
+  maybeShowDriverAlert(addedDrink);
 });
 $("#undo-last").addEventListener("click", () => {
   const latest = [...state.drinks].sort((a,b) => new Date(b.date) - new Date(a.date))[0]; if (!latest) return;
   state.drinks = state.drinks.filter((drink) => drink.id !== latest.id); save(); render(); els.moreDialog.close(); showToast("Último registro deshecho");
 });
 $("#go-patterns").addEventListener("click", () => { els.moreDialog.close(); $("#patterns-title").scrollIntoView({behavior:"smooth", block:"start"}); });
+$("#driver-profile-form").addEventListener("submit", (event) => {
+  event.preventDefault();
+  const weightValue = $("#driver-weight").value.trim(); const heightValue = $("#driver-height").value.trim();
+  if (Boolean(weightValue) !== Boolean(heightValue)) { showToast("Introduce peso y estatura, o deja ambos campos vacíos"); return; }
+  state.driver = sanitizeDriverProfile({enabled:$("#driver-enabled").checked,weight:weightValue || null,height:heightValue || null});
+  save(); render(); showToast("Modo Conductor actualizado");
+});
 const appShell = document.querySelector(".app-shell");
 document.querySelectorAll(".nav-item").forEach((button) => button.addEventListener("click", () => {
   const targetId = button.dataset.target; const target = document.getElementById(targetId); if (!target) return;

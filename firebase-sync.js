@@ -24,7 +24,7 @@ const userDocument = (uid) => doc(db, "users", uid);
 
 async function syncState(state) {
   if (!currentUser || !state) return;
-  await setDoc(userDocument(currentUser.uid), { drinks:state.drinks || [], imports:state.imports || {}, album:state.album || [], updatedAt:serverTimestamp() }, { merge:true });
+  await setDoc(userDocument(currentUser.uid), { drinks:state.drinks || [], imports:state.imports || {}, album:state.album || [], driver:state.driver || {}, updatedAt:serverTimestamp() }, { merge:true });
 }
 
 window.addEventListener("birrometro-state-save", (event) => {
@@ -46,7 +46,7 @@ setPersistence(auth, browserLocalPersistence).then(() => onAuthStateChanged(auth
       window.dispatchEvent(new CustomEvent("birrometro-cloud-state", { detail:snapshot.data() }));
       return;
     }
-    const initialState = { drinks:[], imports:{}, album:[] };
+    const initialState = { drinks:[], imports:{}, album:[], driver:{enabled:true,weight:null,height:null} };
     await syncState(initialState);
     window.dispatchEvent(new CustomEvent("birrometro-cloud-state", { detail:initialState }));
   } catch {

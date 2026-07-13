@@ -14,7 +14,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=27" />
+    <link rel="stylesheet" href="styles.css?v=28" />
   </head>
   <body>
     <div class="app-shell" data-view="home" data-auth="pending">
@@ -142,6 +142,24 @@
             <button class="text-button profile-logout" id="google-logout" type="button" hidden>Cerrar sesión</button>
             <div class="profile-stats"><article><strong id="profile-total">0</strong><small>Total</small></article><article><strong id="profile-liters">0 L</strong><small>Volumen</small></article><article><strong id="profile-favorite">—</strong><small>Favorita</small></article></div>
           </div>
+          <section class="driver-card" aria-labelledby="driver-title">
+            <div class="driver-card__head">
+              <span class="driver-card__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 15.5V12l2.2-5.1A2 2 0 0 1 8 5.7h8a2 2 0 0 1 1.8 1.2L20 12v3.5"/><path d="M3 12h18v6H3zM6 18v2M18 18v2"/><circle cx="7" cy="15" r="1.2"/><circle cx="17" cy="15" r="1.2"/></svg></span>
+              <div><p class="eyebrow">Prevención</p><h3 id="driver-title">Modo Conductor</h3></div>
+              <span class="driver-status" id="driver-status">Activo</span>
+            </div>
+            <p class="driver-intro">Te avisaremos si registras varias consumiciones alcohólicas en poco tiempo. La única opción realmente segura es no conducir después de beber.</p>
+            <form id="driver-profile-form" class="driver-form">
+              <label class="driver-switch"><span><strong>Alertas preventivas</strong><small>Coche, moto o scooter</small></span><input id="driver-enabled" name="enabled" type="checkbox" role="switch" checked /><i aria-hidden="true"></i></label>
+              <div class="driver-fields">
+                <label>Peso <span>kg</span><input id="driver-weight" name="weight" type="number" inputmode="decimal" min="35" max="250" step="0.1" placeholder="Ej. 75" /></label>
+                <label>Estatura <span>cm</span><input id="driver-height" name="height" type="number" inputmode="numeric" min="120" max="230" step="1" placeholder="Ej. 178" /></label>
+              </div>
+              <div class="driver-rule"><span aria-hidden="true">◷</span><p id="driver-rule-copy">Sin datos físicos: aviso por defecto tras 2 consumiciones en 2 horas; un formato grande puede avisar antes.</p></div>
+              <button class="primary-button driver-save" type="submit">Guardar Modo Conductor</button>
+              <small class="driver-privacy">Peso y estatura se sincronizan de forma privada con tu cuenta. Este aviso no calcula la alcoholemia ni determina si puedes conducir.</small>
+            </form>
+          </section>
           <div class="location-concept">
             <div class="location-head"><div><p class="eyebrow">Concepto</p><h3>Mapa de birras</h3></div><span>Próximamente</span></div>
             <div class="beer-map" role="img" aria-label="Concepto visual del mapa de lugares donde has tomado cerveza">
@@ -244,9 +262,22 @@
       </article>
     </dialog>
 
+    <dialog id="driver-alert-dialog" class="driver-alert-dialog" aria-labelledby="driver-alert-title">
+      <article class="driver-alert-panel">
+        <span class="driver-alert-symbol" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3 2.8 20h18.4L12 3Z"/><path d="M12 9v5M12 17.5v.1"/></svg></span>
+        <p class="eyebrow">Alerta preventiva</p>
+        <h2 id="driver-alert-title">Hoy no conduzcas.</h2>
+        <p id="driver-alert-copy">Has registrado varias consumiciones alcohólicas en las últimas 2 horas.</p>
+        <div class="driver-zero"><strong>0,0</strong><span>es la única tasa realmente segura</span></div>
+        <p class="driver-alert-basis" id="driver-alert-basis"></p>
+        <button class="primary-button" type="button" data-close-dialog>Entendido, no voy a conducir</button>
+        <small>No conduzcas coche, moto ni scooter. Usa transporte público, taxi o pide ayuda a una persona que no haya bebido.</small>
+      </article>
+    </dialog>
+
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script src="beer-catalog.js?v=27"></script>
-    <script type="module" src="firebase-sync.js?v=27"></script>
-    <script src="script.js?v=27"></script>
+    <script src="beer-catalog.js?v=28"></script>
+    <script type="module" src="firebase-sync.js?v=28"></script>
+    <script src="script.js?v=28"></script>
   </body>
 </html>

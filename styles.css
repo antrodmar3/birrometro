@@ -249,6 +249,48 @@ input, select { display: block; width: 100%; margin-top: 7px; padding: 13px 14px
 .profile-stats strong, .profile-stats small { display: block; }
 .profile-stats strong { font: 800 19px "Bricolage Grotesque"; }
 .profile-stats small { margin-top: 4px; color: var(--muted); font-size: 9px; }
+.driver-card { margin-top: 14px; padding: 24px; overflow: hidden; border: 1px solid #e7c46c; border-radius: var(--radius); background: linear-gradient(145deg,#fff9e9,var(--card) 58%); }
+.driver-card__head { display: grid; grid-template-columns: 48px 1fr auto; align-items: center; gap: 13px; }
+.driver-card__head .eyebrow { margin-bottom: 5px; }
+.driver-card__head h3 { margin: 0; font: 800 25px/1 "Bricolage Grotesque"; letter-spacing: -.045em; }
+.driver-card__icon { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 16px; background: var(--amber); color: var(--ink); transform: rotate(-3deg); }
+.driver-card__icon svg { width: 27px; height: 27px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.driver-status { padding: 7px 10px; border-radius: 999px; background: var(--ink); color: white; font-size: 8px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.driver-status.is-paused { background: #d9d6cd; color: var(--muted); }
+.driver-intro { margin: 18px 0 0; max-width: 690px; color: var(--muted); font-size: 10px; line-height: 1.6; }
+.driver-form { margin-top: 18px; }
+.driver-switch { position: relative; margin: 0; padding: 14px 15px; display: flex; align-items: center; justify-content: space-between; gap: 15px; border: 1px solid var(--line); border-radius: 16px; background: var(--card); cursor: pointer; }
+.driver-switch span strong, .driver-switch span small { display: block; }
+.driver-switch span strong { color: var(--ink); font: 700 12px "Bricolage Grotesque"; }
+.driver-switch span small { margin-top: 3px; color: var(--muted); font-size: 8px; }
+.driver-switch input { position: absolute; width: 1px; height: 1px; margin: 0; padding: 0; opacity: 0; }
+.driver-switch i { position: relative; flex: 0 0 auto; width: 46px; height: 27px; border-radius: 999px; background: #d7d4ca; transition: background .2s; }
+.driver-switch i::after { content: ""; position: absolute; width: 21px; height: 21px; left: 3px; top: 3px; border-radius: 50%; background: white; box-shadow: 0 2px 7px rgba(23,24,18,.2); transition: transform .2s; }
+.driver-switch input:checked + i { background: var(--amber); }
+.driver-switch input:checked + i::after { transform: translateX(19px); }
+.driver-switch input:focus-visible + i { outline: 3px solid rgba(255,178,26,.34); outline-offset: 3px; }
+.driver-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.driver-fields label { position: relative; margin-bottom: 0; }
+.driver-fields label > span { position: absolute; z-index: 1; right: 13px; bottom: 14px; color: var(--muted); font-size: 9px; }
+.driver-fields input { padding-right: 42px; background: var(--card); }
+.driver-rule { margin-top: 13px; padding: 13px 14px; display: flex; align-items: flex-start; gap: 10px; border-radius: 14px; background: #fff1ce; color: #76500d; }
+.driver-rule > span { font-size: 18px; line-height: 1; }
+.driver-rule p { margin: 0; font-size: 9px; line-height: 1.55; }
+.driver-save { margin-top: 13px; }
+.driver-privacy { display: block; margin: 11px 2px 0; color: var(--muted); font-size: 8px; line-height: 1.5; }
+.driver-alert-dialog { width: min(510px,calc(100% - 28px)); overflow: hidden; border-radius: 30px; background: #fff8e8; }
+.driver-alert-dialog::backdrop { background: rgba(20,12,3,.76); backdrop-filter: blur(7px); }
+.driver-alert-panel { padding: 32px; text-align: center; }
+.driver-alert-symbol { margin: 0 auto 21px; display: grid; place-items: center; width: 70px; height: 70px; border-radius: 23px; background: var(--amber); color: var(--ink); box-shadow: 0 12px 28px rgba(255,178,26,.28); transform: rotate(-4deg); }
+.driver-alert-symbol svg { width: 43px; height: 43px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.driver-alert-panel h2 { margin: 0; font: 800 clamp(36px,8vw,52px)/.94 "Bricolage Grotesque"; letter-spacing: -.06em; }
+.driver-alert-panel > p:not(.eyebrow):not(.driver-alert-basis) { margin: 16px auto 0; max-width: 380px; color: var(--muted); font-size: 11px; line-height: 1.65; }
+.driver-zero { margin: 22px 0 13px; padding: 18px; display: flex; align-items: center; justify-content: center; gap: 14px; border-radius: 19px; background: var(--ink); color: white; text-align: left; }
+.driver-zero strong { color: var(--amber-light); font: 800 39px/1 "Bricolage Grotesque"; letter-spacing: -.06em; }
+.driver-zero span { max-width: 150px; color: #d7d8d0; font-size: 9px; font-weight: 700; line-height: 1.35; }
+.driver-alert-basis { margin: 0 0 16px; color: #76500d; font-size: 8px; line-height: 1.5; }
+.driver-alert-panel .primary-button { margin-top: 0; }
+.driver-alert-panel > small { display: block; margin: 14px auto 0; max-width: 390px; color: var(--muted); font-size: 8px; line-height: 1.55; }
 .location-concept { margin-top: 14px; padding: 24px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); }
 .location-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 15px; margin-bottom: 16px; }
 .location-head h3 { margin: 0; font: 800 25px/1 "Bricolage Grotesque"; letter-spacing: -.045em; }
@@ -350,6 +392,13 @@ input, select { display: block; width: 100%; margin-top: 7px; padding: 13px 14px
   .beer-detail-media { height: 205px; margin: 0 -20px 21px; }
   .beer-detail-facts { grid-template-columns: 1fr 1fr; }
   .beer-detail-facts > div:first-child { grid-column: 1/-1; }
+  .driver-card { padding: 20px; }
+  .driver-card__head { grid-template-columns: 44px 1fr auto; gap: 10px; }
+  .driver-card__icon { width: 44px; height: 44px; border-radius: 14px; }
+  .driver-card__head h3 { font-size: 22px; }
+  .driver-fields { gap: 8px; }
+  .driver-alert-dialog { width: 100%; max-width: none; margin: auto 0 0; border-radius: 28px 28px 0 0; }
+  .driver-alert-panel { padding: 27px 20px calc(24px + env(safe-area-inset-bottom)); }
   .topbar { height: 65px; }
   main { padding-top: 17px; }
   .today-card { min-height: 218px; padding: 25px 20px; border-radius: 25px; }

@@ -34,6 +34,7 @@ También se puede abrir `index.html` directamente, aunque la instalación como P
 - Historial, borrado y exportación JSON.
 - Persistencia local y PWA instalable.
 - Álbum cerrado de 522 cervezas con nombre, país, bandera, tipo, graduación, fermentación y perfil de sabor.
+- Modo Conductor con alerta preventiva en una ventana de dos horas, sensibilidad opcional según peso y estatura y regla conservadora de respaldo cuando faltan esos datos.
 
 ## Catálogo de cervezas
 
