@@ -2,6 +2,10 @@ const STORAGE_KEY = "birrometro-v1";
 const LEGACY_STORAGE_KEY = ["cervezo", "metro-v1"].join("");
 const state = loadState();
 let volumeUnit = "L";
+let beerCatalog = [];
+let albumFilter = "all";
+let beerSearchTimer = null;
+let catalogRequest = null;
 const $ = (selector) => document.querySelector(selector);
 const els = {
   todayCount: $("#today-count"), yearCount: $("#year-count"),
@@ -16,8 +20,8 @@ function loadState() {
     const source = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
     const saved = JSON.parse(source);
     if (source && !localStorage.getItem(STORAGE_KEY)) localStorage.setItem(STORAGE_KEY, source);
-    return { drinks: Array.isArray(saved?.drinks) ? saved.drinks : [], imports: saved?.imports || {} };
-  } catch { return { drinks: [], imports: {} }; }
+    return { drinks: Array.isArray(saved?.drinks) ? saved.drinks : [], imports: saved?.imports || {}, album: Array.isArray(saved?.album) ? saved.album : [] };
+  } catch { return { drinks: [], imports: {}, album: [] }; }
 }
 function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); window.dispatchEvent(new CustomEvent("birrometro-state-save", {detail:state})); }
 function importInitialTotals() {
@@ -185,6 +189,84 @@ function showToast(message) {
   els.toast.textContent = message; els.toast.classList.add("show");
   clearTimeout(showToast.timer); showToast.timer = setTimeout(() => els.toast.classList.remove("show"), 2600);
 }
+function normalizeCommonsImage(value) {
+  if (!value) return "";
+  try {
+    const url = new URL(value);
+    if (url.protocol === "http:") url.protocol = "https:";
+    if (url.protocol !== "https:" || !["commons.wikimedia.org", "upload.wikimedia.org"].includes(url.hostname)) return "";
+    return url.href;
+  } catch { return ""; }
+}
+function commonsFileUrl(filename) {
+  return filename ? `https://commons.wikimedia.org/wiki/Special:Redirect/file/${encodeURIComponent(filename)}?width=420` : "";
+}
+function mergeBeerCatalog(items) {
+  const merged = new Map(beerCatalog.map((beer) => [beer.id, beer]));
+  items.forEach((beer) => {
+    if (!/^Q\d+$/.test(beer.id) || !beer.name || /^Q\d+$/.test(beer.name)) return;
+    const current = merged.get(beer.id) || {};
+    merged.set(beer.id, {...current, ...beer, image:normalizeCommonsImage(beer.image) || current.image || ""});
+  });
+  beerCatalog = [...merged.values()];
+}
+async function loadBeerCatalog() {
+  if (catalogRequest) return catalogRequest;
+  const query = `SELECT ?item ?itemLabel ?description ?image ?logo ?sitelinks WHERE {
+    ?item wdt:P31/wdt:P279* wd:Q15075508; wikibase:sitelinks ?sitelinks.
+    OPTIONAL { ?item wdt:P18 ?image. }
+    OPTIONAL { ?item wdt:P154 ?logo. }
+    OPTIONAL { ?item schema:description ?description. FILTER(LANG(?description) = "es" || LANG(?description) = "en") }
+    FILTER(BOUND(?image) || BOUND(?logo))
+    SERVICE wikibase:label { bd:serviceParam wikibase:language "es,en". }
+  } ORDER BY DESC(?sitelinks) LIMIT 80`;
+  $("#album-source-status").textContent = "Cargando catálogo abierto…";
+  catalogRequest = fetch(`https://query.wikidata.org/sparql?format=json&query=${encodeURIComponent(query)}`, {headers:{Accept:"application/sparql-results+json"}})
+    .then((response) => { if (!response.ok) throw new Error("catalog"); return response.json(); })
+    .then((data) => {
+      mergeBeerCatalog((data.results?.bindings || []).map((binding) => ({
+        id:binding.item?.value?.split("/").pop() || "", name:binding.itemLabel?.value || "",
+        description:binding.description?.value || "Marca de cerveza", image:binding.logo?.value || binding.image?.value || ""
+      })));
+      $("#album-source-status").textContent = "Catálogo abierto de Wikidata"; renderBeerAlbum();
+    })
+    .catch(() => { $("#album-source-status").textContent = "No se pudo cargar · inténtalo de nuevo"; })
+    .finally(() => { catalogRequest = null; });
+  return catalogRequest;
+}
+async function searchRemoteBeers(term) {
+  const searchUrl = new URL("https://www.wikidata.org/w/api.php");
+  Object.entries({action:"wbsearchentities",search:term,language:"es",uselang:"es",type:"item",limit:"20",origin:"*",format:"json"}).forEach(([key,value]) => searchUrl.searchParams.set(key,value));
+  const searchResponse = await fetch(searchUrl); if (!searchResponse.ok) throw new Error("search");
+  const found = (await searchResponse.json()).search || []; const beerWords = /cerve|beer|brew|bier|birra|lager|ale|stout|pils/i;
+  const candidates = found.filter((item) => beerWords.test(`${item.label} ${item.description || ""}`)).slice(0,12);
+  if (!candidates.length) return;
+  const entityUrl = new URL("https://www.wikidata.org/w/api.php");
+  Object.entries({action:"wbgetentities",ids:candidates.map((item) => item.id).join("|"),props:"claims",origin:"*",format:"json"}).forEach(([key,value]) => entityUrl.searchParams.set(key,value));
+  const entityResponse = await fetch(entityUrl); const entities = entityResponse.ok ? (await entityResponse.json()).entities || {} : {};
+  mergeBeerCatalog(candidates.map((item) => {
+    const claims = entities[item.id]?.claims || {};
+    const filename = claims.P154?.[0]?.mainsnak?.datavalue?.value || claims.P18?.[0]?.mainsnak?.datavalue?.value || "";
+    return {id:item.id,name:item.label,description:item.description || "Marca de cerveza",image:commonsFileUrl(filename)};
+  }));
+}
+function renderBeerAlbum() {
+  const marked = new Map((state.album || []).map((beer) => [beer.id, beer]));
+  const combined = new Map(beerCatalog.map((beer) => [beer.id, beer]));
+  marked.forEach((beer,id) => { if (!combined.has(id)) combined.set(id,beer); });
+  const term = ($("#beer-search")?.value || "").trim().toLocaleLowerCase("es");
+  const visible = [...combined.values()].filter((beer) => albumFilter !== "tried" || marked.has(beer.id))
+    .filter((beer) => !term || `${beer.name} ${beer.description || ""}`.toLocaleLowerCase("es").includes(term))
+    .sort((a,b) => Number(marked.has(b.id)) - Number(marked.has(a.id)) || a.name.localeCompare(b.name,"es",{sensitivity:"base"}));
+  $("#album-progress").textContent = `${marked.size} probadas`; $("#album-tried-count").textContent = marked.size;
+  $("#album-catalog-count").textContent = beerCatalog.length || "—";
+  $("#beer-album-grid").innerHTML = visible.map((beer) => {
+    const tried = marked.has(beer.id); const image = normalizeCommonsImage(beer.image); const initial = beer.name.trim().charAt(0).toUpperCase();
+    return `<button class="beer-card${tried ? " is-tried" : ""}" type="button" data-beer-id="${beer.id}" aria-pressed="${tried}"><span class="beer-card__image">${image ? `<img src="${escapeHtml(image)}" alt="" loading="lazy" referrerpolicy="no-referrer" />` : `<span class="beer-card__fallback">${escapeHtml(initial)}</span>`}</span><span class="beer-card__copy"><strong>${escapeHtml(beer.name)}</strong><small>${escapeHtml(beer.description || "Marca de cerveza")}</small></span><span class="beer-card__check" aria-hidden="true">${tried ? "✓" : "+"}</span></button>`;
+  }).join("");
+  const loadingInitialCatalog = !beerCatalog.length && !term && albumFilter === "all" && $("#album-source-status").textContent.startsWith("Cargando");
+  $("#album-empty").hidden = visible.length > 0 || loadingInitialCatalog;
+}
 function render() {
   const today = since(startOfDay()); const week = since(startOfWeek()); const month = since(startOfMonth());
   const currentYear = new Date().getFullYear();
@@ -213,6 +295,7 @@ function render() {
   $("#profile-total").textContent = state.drinks.length;
   $("#profile-liters").textContent = `${(state.drinks.reduce((sum, drink) => sum + Number(drink.volume || 0), 0) / 1000).toLocaleString("es-ES", {maximumFractionDigits:1})} L`;
   $("#profile-favorite").textContent = favorite?.type || "—";
+  renderBeerAlbum();
 }
 function escapeHtml(value) { const node = document.createElement("span"); node.textContent = value; return node.innerHTML; }
 
@@ -242,10 +325,10 @@ $("#go-patterns").addEventListener("click", () => { els.moreDialog.close(); $("#
 const appShell = document.querySelector(".app-shell");
 document.querySelectorAll(".nav-item").forEach((button) => button.addEventListener("click", () => {
   const targetId = button.dataset.target; const target = document.getElementById(targetId); if (!target) return;
-  const standalone = targetId === "historial" || targetId === "perfil";
+  const standalone = targetId === "historial" || targetId === "perfil" || targetId === "album";
   appShell.dataset.view = standalone ? targetId : "home";
   document.querySelectorAll(".nav-item").forEach((item) => item.classList.toggle("is-active", item === button));
-  if (standalone) { window.scrollTo({top:0, behavior:"smooth"}); return; }
+  if (standalone) { if (targetId === "album") loadBeerCatalog(); window.scrollTo({top:0, behavior:"smooth"}); return; }
   requestAnimationFrame(() => target.scrollIntoView({behavior:"smooth", block:"start"}));
 }));
 if ("IntersectionObserver" in window) {
@@ -273,10 +356,28 @@ window.addEventListener("birrometro-auth", (event) => {
 });
 window.addEventListener("birrometro-cloud-state", (event) => {
   if (!event.detail?.drinks) return;
-  state.drinks = event.detail.drinks; state.imports = event.detail.imports || {};
+  state.drinks = event.detail.drinks; state.imports = event.detail.imports || {}; state.album = event.detail.album || [];
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); render(); showToast("Datos sincronizados");
 });
 window.addEventListener("birrometro-auth-error", () => showToast("No se pudo iniciar sesión con Google"));
+$("#beer-album-grid").addEventListener("click", (event) => {
+  const card = event.target.closest("[data-beer-id]"); if (!card) return;
+  const beer = beerCatalog.find((item) => item.id === card.dataset.beerId) || state.album.find((item) => item.id === card.dataset.beerId); if (!beer) return;
+  const wasTried = state.album.some((item) => item.id === beer.id);
+  state.album = wasTried ? state.album.filter((item) => item.id !== beer.id) : [...state.album, {...beer,markedAt:new Date().toISOString()}];
+  save(); renderBeerAlbum(); showToast(wasTried ? `${beer.name} eliminada del álbum` : `${beer.name} añadida al álbum`);
+});
+document.querySelectorAll("[data-album-filter]").forEach((button) => button.addEventListener("click", () => {
+  albumFilter = button.dataset.albumFilter;
+  document.querySelectorAll("[data-album-filter]").forEach((item) => item.classList.toggle("is-active", item === button)); renderBeerAlbum();
+}));
+$("#beer-search").addEventListener("input", (event) => {
+  renderBeerAlbum(); clearTimeout(beerSearchTimer); const term = event.currentTarget.value.trim(); if (term.length < 2) return;
+  beerSearchTimer = setTimeout(() => {
+    $("#album-source-status").textContent = "Buscando en Wikidata…";
+    searchRemoteBeers(term).then(() => { $("#album-source-status").textContent = "Resultados de Wikidata"; renderBeerAlbum(); }).catch(() => { $("#album-source-status").textContent = "No se pudo completar la búsqueda"; });
+  },450);
+});
 if ("serviceWorker" in navigator && location.protocol !== "file:") {
   let refreshing = false;
   navigator.serviceWorker.addEventListener("controllerchange", () => {
