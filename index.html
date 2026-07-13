@@ -15,8 +15,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="assets/vendor/leaflet.css?v=32" />
-    <link rel="stylesheet" href="styles.css?v=32" />
+    <link rel="stylesheet" href="assets/vendor/leaflet.css?v=33" />
+    <link rel="stylesheet" href="styles.css?v=33" />
   </head>
   <body>
     <div class="app-shell" data-view="home" data-auth="pending">
@@ -184,9 +184,18 @@
           <div class="location-concept">
             <div class="location-head">
               <div><p class="eyebrow">Tus lugares</p><h3>Mapa de birras</h3></div>
-              <label class="location-period"><span>Periodo</span><select id="location-period"><option value="all">Todo</option><option value="year">Este año</option><option value="month">Este mes</option></select></label>
+              <span class="location-live"><i></i>Interactivo</span>
             </div>
             <div class="beer-map" id="beer-map" aria-label="Mapa de calor de los lugares donde has tomado cerveza">
+              <div class="map-tools" id="map-tools">
+                <button class="map-filter-toggle" id="map-filter-toggle" type="button" aria-expanded="false" aria-controls="map-filter-panel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg><span>Filtrar</span><b id="map-filter-count">12/12</b></button>
+                <div class="map-filter-panel" id="map-filter-panel" hidden>
+                  <label class="map-period"><span>Periodo</span><select id="location-period"><option value="all">Todo</option><option value="year">Este año</option><option value="month">Este mes</option></select></label>
+                  <div class="map-filter-heading"><div><strong>Formatos</strong><small>Elige qué aparece en el mapa</small></div><div><button id="map-select-all" type="button">Todos</button><button id="map-select-none" type="button">Ninguno</button></div></div>
+                  <div class="map-format-filters" id="map-format-filters"></div>
+                  <button class="map-fit-button" id="map-fit-points" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/></svg>Ver todos los puntos</button>
+                </div>
+              </div>
               <div class="map-empty" id="map-empty"><span aria-hidden="true"><img src="icon.svg" alt="" /></span><strong>Aún no hay ubicaciones</strong><small>La ubicación se añadirá automáticamente a tus próximas birras cuando hayas permitido el acceso.</small></div>
             </div>
             <div class="location-stats"><article><strong id="map-location-count">0</strong><small>Zonas</small></article><article><strong id="map-favorite-place">—</strong><small>Más visitada</small></article><article><strong id="map-drink-count">0</strong><small>Birras mapeadas</small></article></div>
@@ -226,13 +235,13 @@
           <button class="size-option" type="button" data-volume="330" data-type="Lata"><span class="size-icon size-icon--image" aria-hidden="true"><img src="assets/menu-icons/lata.webp" alt="" /></span><span><strong>Lata</strong><small>330 ml · estilizada</small></span><b>+</b></button>
           <button class="size-option" type="button" data-volume="330" data-type="Lata gordita"><span class="size-icon size-icon--image" aria-hidden="true"><img src="assets/menu-icons/lata-gordita.webp" alt="" /></span><span><strong>Lata gordita</strong><small>330 ml · formato ancho</small></span><b>+</b></button>
           <button class="size-option" type="button" data-volume="330" data-type="Sin" data-abv="0"><span class="size-icon size-icon--image" aria-hidden="true"><img src="assets/menu-icons/sin.webp" alt="" /></span><span><strong>Sin</strong><small>330 ml · sin alcohol</small></span><b>+</b></button>
-          <button class="size-option" type="button" data-volume="300" data-type="Copa"><span class="size-icon size-icon--copa" aria-hidden="true">30</span><span><strong>Copa</strong><small>300 ml</small></span><b>+</b></button>
-          <button class="size-option" type="button" data-volume="200" data-type="Cortá"><span class="size-icon size-icon--corta" aria-hidden="true">20</span><span><strong>Cortá</strong><small>200 ml</small></span><b>+</b></button>
+          <button class="size-option" type="button" data-volume="300" data-type="Copa"><span class="size-icon size-icon--image" aria-hidden="true"><img src="assets/menu-icons/copa.webp" alt="" /></span><span><strong>Copa</strong><small>300 ml</small></span><b>+</b></button>
+          <button class="size-option" type="button" data-volume="200" data-type="Cortá"><span class="size-icon size-icon--image" aria-hidden="true"><img src="assets/menu-icons/corta.webp" alt="" /></span><span><strong>Cortá</strong><small>200 ml</small></span><b>+</b></button>
           <button class="size-option" type="button" data-volume="330" data-type="Tercio"><span class="size-icon size-icon--image" aria-hidden="true"><img src="assets/menu-icons/tercio.webp" alt="" /></span><span><strong>Tercio</strong><small>330 ml</small></span><b>+</b></button>
           <button class="size-option" type="button" data-volume="250" data-type="Botellín"><span class="size-icon size-icon--image" aria-hidden="true"><img src="assets/menu-icons/botellin.webp" alt="" /></span><span><strong>Botellín</strong><small>250 ml</small></span><b>+</b></button>
           <button class="size-option" type="button" data-volume="568" data-type="Pinta"><span class="size-icon size-icon--image" aria-hidden="true"><img src="assets/menu-icons/pinta.webp" alt="" /></span><span><strong>Pinta</strong><small>568 ml</small></span><b>+</b></button>
-          <button class="size-option" type="button" data-volume="200" data-type="Caña"><span class="size-icon size-icon--cana" aria-hidden="true">20</span><span><strong>Caña</strong><small>200 ml</small></span><b>+</b></button>
-          <button class="size-option" type="button" data-volume="400" data-type="Grande"><span class="size-icon size-icon--cider" aria-hidden="true">40</span><span><strong>Grande</strong><small>400 ml · vaso de sidra</small></span><b>+</b></button>
+          <button class="size-option" type="button" data-volume="200" data-type="Caña"><span class="size-icon size-icon--image" aria-hidden="true"><img src="assets/menu-icons/cana.webp" alt="" /></span><span><strong>Caña</strong><small>200 ml</small></span><b>+</b></button>
+          <button class="size-option" type="button" data-volume="400" data-type="Grande"><span class="size-icon size-icon--image" aria-hidden="true"><img src="assets/menu-icons/grande.webp" alt="" /></span><span><strong>Grande</strong><small>400 ml · vaso de sidra</small></span><b>+</b></button>
           <button class="size-option" type="button" data-volume="500" data-type="Yonkilata"><span class="size-icon size-icon--image" aria-hidden="true"><img src="assets/menu-icons/yonkilata.webp" alt="" /></span><span><strong>Yonkilata</strong><small>500 ml</small></span><b>+</b></button>
         </div>
       </div>
@@ -245,6 +254,16 @@
         <button class="primary-button" id="export-data-settings" type="button">Exportar copia JSON</button>
         <button class="danger-button" id="clear-data" type="button">Borrar todos mis datos</button>
       </div>
+    </dialog>
+
+    <dialog id="clear-confirm-dialog" class="confirm-dialog" aria-labelledby="clear-confirm-title">
+      <article class="confirm-panel">
+        <span class="confirm-symbol" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 3h6l1 4H8l1-4ZM7 7l1 14h8l1-14M10 11v6M14 11v6"/></svg></span>
+        <p class="eyebrow">Acción irreversible</p>
+        <h2 id="clear-confirm-title">¿Borrar todo tu historial?</h2>
+        <p>Se eliminarán tus consumiciones, estadísticas y ubicaciones sincronizadas. Esta acción no se puede deshacer.</p>
+        <div class="confirm-actions"><button class="secondary-button" type="button" data-close-dialog>Cancelar</button><button class="confirm-danger" id="confirm-clear-data" type="button">Borrar definitivamente</button></div>
+      </article>
     </dialog>
 
     <dialog id="more-dialog" class="size-dialog">
@@ -298,10 +317,10 @@
     </dialog>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script src="assets/vendor/leaflet.js?v=32"></script>
-    <script src="assets/vendor/leaflet-heat.js?v=32"></script>
-    <script src="beer-catalog.js?v=32"></script>
-    <script type="module" src="firebase-sync.js?v=32"></script>
-    <script src="script.js?v=32"></script>
+    <script src="assets/vendor/leaflet.js?v=33"></script>
+    <script src="assets/vendor/leaflet-heat.js?v=33"></script>
+    <script src="beer-catalog.js?v=33"></script>
+    <script type="module" src="firebase-sync.js?v=33"></script>
+    <script src="script.js?v=33"></script>
   </body>
 </html>

@@ -116,6 +116,13 @@ let beerMap = null;
 let beerHeatLayer = null;
 let beerPointLayer = null;
 let beerMapSignature = "";
+const mapDisabledFormats = new Set();
+const FORMAT_ICON_PATHS = Object.freeze({
+  "Botellín":"assets/menu-icons/botellin.webp", "Caña":"assets/menu-icons/cana.webp", "Copa":"assets/menu-icons/copa.webp",
+  "Cortá":"assets/menu-icons/corta.webp", "Grande":"assets/menu-icons/grande.webp", "Lata":"assets/menu-icons/lata.webp",
+  "Lata gordita":"assets/menu-icons/lata-gordita.webp", "Litro":"assets/menu-icons/litro.webp", "Pinta":"assets/menu-icons/pinta.webp",
+  "Sin":"assets/menu-icons/sin.webp", "Tercio":"assets/menu-icons/tercio.webp", "Yonkilata":"assets/menu-icons/yonkilata.webp"
+});
 const beerCatalogById = new Map(beerCatalog.map((beer) => [beer.id, beer]));
 const DRIVER_WINDOW_MS = 2 * 60 * 60 * 1000;
 const ETHANOL_DENSITY = 0.789;
@@ -449,7 +456,7 @@ function renderBeerAlbum() {
   }, {once:true}));
   $("#album-empty").hidden = visible.length > 0;
 }
-function locatedDrinksForPeriod() {
+function periodLocatedDrinks() {
   const period = $("#location-period")?.value || "all"; const now = new Date();
   return state.drinks.filter((drink) => {
     if (!sanitizeLocation(drink.location)) return false;
@@ -458,6 +465,15 @@ function locatedDrinksForPeriod() {
     if (period === "month") return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth();
     return true;
   });
+}
+function locatedDrinksForPeriod() { return periodLocatedDrinks().filter((drink) => !mapDisabledFormats.has(drink.type)); }
+function renderMapFormatFilters() {
+  const types = Object.keys(FORMAT_ICON_PATHS).sort((a,b) => a.localeCompare(b,"es",{sensitivity:"base"}));
+  $("#map-format-filters").innerHTML = types.map((type) => {
+    const active = !mapDisabledFormats.has(type);
+    return `<button class="map-format-filter${active ? " is-active" : ""}" type="button" data-map-format="${escapeHtml(type)}" aria-pressed="${active}"><img src="${FORMAT_ICON_PATHS[type]}" alt="" /><span>${escapeHtml(type)}</span><i aria-hidden="true">✓</i></button>`;
+  }).join("");
+  $("#map-filter-count").textContent = `${types.length - mapDisabledFormats.size}/${types.length}`;
 }
 function locationZoneKey(location) { return `${location.latitude.toFixed(3)}|${location.longitude.toFixed(3)}`; }
 function renderLocationStats(located) {
@@ -477,13 +493,30 @@ function renderLocationStats(located) {
 }
 function ensureBeerMap() {
   if (beerMap || !window.L || typeof window.L.heatLayer !== "function" || !$("#beer-map")) return Boolean(beerMap);
-  beerMap = L.map("beer-map", {scrollWheelZoom:false, zoomControl:true}).setView([40.2,-3.7], 5);
+  beerMap = L.map("beer-map", {scrollWheelZoom:true, zoomControl:true, tap:true}).setView([40.2,-3.7], 5);
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {maxZoom:19, attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'}).addTo(beerMap);
   beerHeatLayer = L.heatLayer([], {radius:30, blur:23, maxZoom:17, minOpacity:.36, gradient:{.25:"#ffd36e",.5:"#ffb21a",.72:"#ff6b35",1:"#a84f40"}}).addTo(beerMap);
   beerPointLayer = L.layerGroup().addTo(beerMap);
+  L.DomEvent.disableClickPropagation($("#map-tools"));
+  L.DomEvent.disableScrollPropagation($("#map-tools"));
+  beerMap.on("click", () => { $("#map-filter-panel").hidden = true; $("#map-filter-toggle").setAttribute("aria-expanded","false"); });
   return true;
 }
-function renderLocationMap() {
+function beerMapMarkerIcon(type) {
+  const source = FORMAT_ICON_PATHS[type] || "icon.svg";
+  return L.divIcon({className:"beer-map-marker",html:`<span><img src="${source}" alt="" /></span>`,iconSize:[46,54],iconAnchor:[23,49],popupAnchor:[0,-45]});
+}
+function spreadMarkerCoordinates(location, occurrences) {
+  const key = `${location.latitude.toFixed(5)}|${location.longitude.toFixed(5)}`;
+  const index = occurrences.get(key) || 0; occurrences.set(key,index + 1);
+  if (!index) return [location.latitude,location.longitude];
+  const ring = Math.ceil(index / 7); const angle = index * 2.39996; const latitudeOffset = .000035 * ring;
+  const longitudeOffset = latitudeOffset / Math.max(Math.cos(location.latitude * Math.PI / 180), .35);
+  return [location.latitude + Math.sin(angle) * latitudeOffset,location.longitude + Math.cos(angle) * longitudeOffset];
+}
+function renderLocationMap({fit=true} = {}) {
+  renderMapFormatFilters();
+  const allLocated = periodLocatedDrinks();
   const located = locatedDrinksForPeriod(); renderLocationStats(located);
   const empty = $("#map-empty");
   if (!window.L || typeof window.L.heatLayer !== "function") {
@@ -497,17 +530,23 @@ function renderLocationMap() {
   beerMap.invalidateSize();
   const points = located.map((drink) => { const location = sanitizeLocation(drink.location); return [location.latitude,location.longitude,1]; });
   beerHeatLayer.setLatLngs(points); beerPointLayer.clearLayers();
+  const occurrences = new Map();
   located.forEach((drink) => {
     const location = sanitizeLocation(drink.location); const date = new Date(drink.date);
-    const title = location.name || "Ubicación guardada";
-    const detail = `${escapeHtml(drink.type)} · ${drink.volume} ml<br>${new Intl.DateTimeFormat("es-ES",{day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"}).format(date)}`;
-    L.circleMarker([location.latitude,location.longitude], {radius:5,weight:2,color:"#171812",fillColor:"#ffb21a",fillOpacity:.72}).bindPopup(`<strong>${escapeHtml(title)}</strong>${detail}`).addTo(beerPointLayer);
+    const title = location.name || "Punto registrado"; const source = FORMAT_ICON_PATHS[drink.type] || "icon.svg";
+    const detail = `<div class="map-popup-head"><img src="${source}" alt="" /><div><strong>${escapeHtml(drink.type)}</strong><small>${drink.volume} ml · ${escapeHtml(title)}</small></div></div><p>${new Intl.DateTimeFormat("es-ES",{day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"}).format(date)}</p>`;
+    L.marker(spreadMarkerCoordinates(location,occurrences), {icon:beerMapMarkerIcon(drink.type),title:`${drink.type} · ${drink.volume} ml`}).bindPopup(detail).addTo(beerPointLayer);
   });
   empty.hidden = located.length > 0;
-  if (!located.length) return;
-  const signature = `${$("#location-period").value}|${located.map((drink) => `${drink.id}:${drink.location?.latitude}:${drink.location?.longitude}`).join("|")}`;
-  if (signature === beerMapSignature) return;
+  if (!located.length) {
+    empty.querySelector("strong").textContent = allLocated.length ? "No hay formatos seleccionados" : "Aún no hay ubicaciones";
+    empty.querySelector("small").textContent = allLocated.length ? "Abre el filtro y activa al menos un tipo de cerveza." : "La ubicación se añadirá automáticamente a tus próximas birras cuando hayas permitido el acceso.";
+    return;
+  }
+  const signature = `${$("#location-period").value}|${[...mapDisabledFormats].sort().join(",")}|${located.map((drink) => `${drink.id}:${drink.location?.latitude}:${drink.location?.longitude}`).join("|")}`;
+  const changed = signature !== beerMapSignature;
   beerMapSignature = signature;
+  if (!fit || !changed) return;
   if (points.length === 1) beerMap.setView(points[0], 15);
   else beerMap.fitBounds(L.latLngBounds(points.map((point) => [point[0],point[1]])), {padding:[34,34],maxZoom:15});
 }
@@ -609,13 +648,27 @@ document.querySelectorAll(".nav-item").forEach((button) => button.addEventListen
   if (standalone) { window.scrollTo({top:0, behavior:"smooth"}); if (targetId === "perfil") requestAnimationFrame(() => requestAnimationFrame(renderLocationMap)); return; }
   requestAnimationFrame(() => target.scrollIntoView({behavior:"smooth", block:"start"}));
 }));
-$("#location-period").addEventListener("change", () => { beerMapSignature = ""; renderLocationMap(); });
+$("#map-filter-toggle").addEventListener("click", () => {
+  const panel = $("#map-filter-panel"); panel.hidden = !panel.hidden;
+  $("#map-filter-toggle").setAttribute("aria-expanded",String(!panel.hidden));
+});
+$("#map-format-filters").addEventListener("click", (event) => {
+  const button = event.target.closest("[data-map-format]"); if (!button) return;
+  const type = button.dataset.mapFormat;
+  if (mapDisabledFormats.has(type)) mapDisabledFormats.delete(type); else mapDisabledFormats.add(type);
+  renderLocationMap({fit:false});
+});
+$("#map-select-all").addEventListener("click", () => { mapDisabledFormats.clear(); renderLocationMap({fit:false}); });
+$("#map-select-none").addEventListener("click", () => { Object.keys(FORMAT_ICON_PATHS).forEach((type) => mapDisabledFormats.add(type)); renderLocationMap({fit:false}); });
+$("#map-fit-points").addEventListener("click", () => { beerMapSignature = ""; renderLocationMap({fit:true}); });
+$("#location-period").addEventListener("change", () => { beerMapSignature = ""; renderLocationMap({fit:true}); });
 if ("IntersectionObserver" in window) {
   const navObserver = new IntersectionObserver((entries) => { entries.forEach((entry) => { if (!entry.isIntersecting || appShell.dataset.view !== "home") return; document.querySelectorAll(".nav-item").forEach((item) => item.classList.toggle("is-active", item.dataset.target === entry.target.id)); }); }, {rootMargin:"-25% 0px -65% 0px"});
   ["inicio","formatos","datos"].forEach((id) => { const section = document.getElementById(id); if (section) navObserver.observe(section); });
 }
 els.history.addEventListener("click", (event) => { const button = event.target.closest("[data-id]"); if (!button) return; state.drinks = state.drinks.filter((drink) => drink.id !== button.dataset.id); save(); render(); showToast("Registro eliminado"); });
-$("#clear-data").addEventListener("click", () => { if (!confirm("¿Seguro que quieres borrar todo el historial?")) return; state.drinks = []; save(); render(); els.settingsDialog.close(); showToast("Historial borrado"); });
+$("#clear-data").addEventListener("click", () => { els.settingsDialog.close(); $("#clear-confirm-dialog").showModal(); });
+$("#confirm-clear-data").addEventListener("click", () => { state.drinks = []; save(); render(); $("#clear-confirm-dialog").close(); showToast("Historial borrado"); });
 function exportData() {
   const blob = new Blob([JSON.stringify({ exportedAt:new Date().toISOString(), ...state }, null, 2)], {type:"application/json"}); const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.href=url; link.download=`birrometro-${new Date().toISOString().slice(0,10)}.json`; link.click(); URL.revokeObjectURL(url); showToast("Datos exportados");
 }
