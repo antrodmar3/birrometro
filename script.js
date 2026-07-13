@@ -111,6 +111,7 @@ let volumeUnit = "L";
 const beerCatalog = CLOSED_BEER_CATALOG;
 let albumFilter = "all";
 let pendingLocation = null;
+let locationRequest = Promise.resolve(null);
 let beerMap = null;
 let beerHeatLayer = null;
 let beerPointLayer = null;
@@ -491,7 +492,8 @@ function renderLocationMap() {
     empty.querySelector("small").textContent = "Comprueba la conexión e inténtalo de nuevo.";
     return;
   }
-  if (appShell?.dataset.view !== "perfil" || !ensureBeerMap()) return;
+  if (!ensureBeerMap()) return;
+  if (appShell?.dataset.view !== "perfil") return;
   beerMap.invalidateSize();
   const points = located.map((drink) => { const location = sanitizeLocation(drink.location); return [location.latitude,location.longitude,1]; });
   beerHeatLayer.setLatLngs(points); beerPointLayer.clearLayers();
@@ -544,45 +546,37 @@ function render() {
 }
 function escapeHtml(value) { const node = document.createElement("span"); node.textContent = value; return node.innerHTML; }
 
-function resetPendingLocation() {
+function beginAutomaticLocationCapture() {
   pendingLocation = null;
-  $("#location-capture").classList.remove("has-location", "is-loading");
-  $("#capture-location").disabled = false;
-  $("#location-capture-status").textContent = "Opcional · solo para esta cerveza";
-  $("#location-name").value = "";
-  $("#location-name-wrap").hidden = true;
-  $("#clear-location").hidden = true;
-}
-function captureCurrentLocation() {
-  if (!navigator.geolocation) { showToast("Este dispositivo no permite obtener la ubicación"); return; }
-  const capture = $("#location-capture"); const button = $("#capture-location");
-  capture.classList.add("is-loading"); button.disabled = true; $("#location-capture-status").textContent = "Buscando tu ubicación…";
-  navigator.geolocation.getCurrentPosition((position) => {
+  $("#add-dialog-copy").textContent = "Obteniendo automáticamente el día, la hora y la ubicación…";
+  if (!navigator.geolocation) {
+    $("#add-dialog-copy").textContent = "Guardaremos el día y la hora; la ubicación no está disponible.";
+    locationRequest = Promise.resolve(null); return locationRequest;
+  }
+  locationRequest = new Promise((resolve) => navigator.geolocation.getCurrentPosition((position) => {
     pendingLocation = sanitizeLocation({latitude:position.coords.latitude,longitude:position.coords.longitude,accuracy:position.coords.accuracy});
-    capture.classList.remove("is-loading"); capture.classList.add("has-location"); button.disabled = false;
-    $("#location-capture-status").textContent = `Ubicación lista · precisión ${pendingLocation.accuracy || "—"} m`;
-    $("#location-name-wrap").hidden = false; $("#clear-location").hidden = false; $("#location-name").focus();
-  }, (error) => {
-    capture.classList.remove("is-loading"); button.disabled = false;
-    const denied = error.code === 1;
-    $("#location-capture-status").textContent = denied ? "Permiso de ubicación no concedido" : "No hemos podido localizarte";
-    showToast(denied ? "Activa el permiso de ubicación para crear el mapa" : "No se pudo obtener la ubicación");
-  }, {enableHighAccuracy:true,timeout:12000,maximumAge:60000});
+    $("#add-dialog-copy").textContent = "Día, hora y ubicación preparados automáticamente.";
+    resolve(pendingLocation);
+  }, () => {
+    $("#add-dialog-copy").textContent = "Guardaremos el día y la hora; la ubicación no está disponible.";
+    resolve(null);
+  }, {enableHighAccuracy:true,timeout:6500,maximumAge:300000}));
+  return locationRequest;
 }
-$("#open-add").addEventListener("click", () => { resetPendingLocation(); els.addDialog.showModal(); });
+$("#open-add").addEventListener("click", () => { els.addDialog.showModal(); beginAutomaticLocationCapture(); });
 $("#open-more").addEventListener("click", () => els.moreDialog.showModal());
 $("#open-settings").addEventListener("click", () => els.settingsDialog.showModal());
-$("#capture-location").addEventListener("click", captureCurrentLocation);
-$("#clear-location").addEventListener("click", resetPendingLocation);
 $("#unit-toggle").addEventListener("click", () => { volumeUnit = volumeUnit === "L" ? "mL" : "L"; render(); });
-document.querySelectorAll(".size-option").forEach((button) => button.addEventListener("click", () => {
+document.querySelectorAll(".size-option").forEach((button) => button.addEventListener("click", async () => {
+  const options = $(".size-options"); options.classList.add("is-locating");
+  if (!pendingLocation) $("#add-dialog-copy").textContent = "Terminando de localizarte…";
+  const location = sanitizeLocation(pendingLocation || await locationRequest);
   const addedAt = new Date();
-  const location = pendingLocation ? sanitizeLocation({...pendingLocation,name:$("#location-name").value}) : null;
   const addedDrink = { id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), volume:Number(button.dataset.volume), type:button.dataset.type, abv:Number(button.dataset.abv ?? 5), date:addedAt.toISOString(), note:"", ...(location ? {location} : {}) };
   state.drinks.push(addedDrink);
   if (navigator.vibrate) navigator.vibrate(18);
-  save(); render(); els.addDialog.close();
-  showToast(`${button.dataset.type} añadida · ${new Intl.DateTimeFormat("es-ES", {hour:"2-digit", minute:"2-digit"}).format(addedAt)}`);
+  save(); render(); els.addDialog.close(); options.classList.remove("is-locating");
+  showToast(`${button.dataset.type} añadida · ${new Intl.DateTimeFormat("es-ES", {hour:"2-digit", minute:"2-digit"}).format(addedAt)}${location ? " · ubicación guardada" : ""}`);
   maybeShowDriverAlert(addedDrink);
 }));
 $("#open-late").addEventListener("click", () => { els.moreDialog.close(); $("#late-date").value = localDateTime(); els.lateDialog.showModal(); });
@@ -630,6 +624,7 @@ $("#export-data-settings").addEventListener("click", exportData);
 document.querySelectorAll("dialog").forEach((dialog) => dialog.addEventListener("click", (event) => { if (event.target === dialog) dialog.close(); }));
 document.querySelectorAll("[data-close-dialog]").forEach((button) => button.addEventListener("click", () => button.closest("dialog").close()));
 function requestLogin() {
+  appShell.dataset.auth = "pending";
   $("#gate-google-login").disabled = true;
   $("#auth-gate-status").textContent = "Abriendo Google…";
   window.dispatchEvent(new Event("birrometro-login"));
@@ -637,7 +632,14 @@ function requestLogin() {
 $("#google-login").addEventListener("click", requestLogin);
 $("#gate-google-login").addEventListener("click", requestLogin);
 $("#google-logout").addEventListener("click", () => { appShell.dataset.auth = "pending"; window.dispatchEvent(new Event("birrometro-logout")); });
+const authWatchdog = setTimeout(() => {
+  if (appShell.dataset.auth !== "pending") return;
+  appShell.dataset.auth = "locked";
+  $("#gate-google-login").disabled = false;
+  $("#auth-gate-status").textContent = "No pudimos recuperar la sesión. Puedes volver a intentarlo.";
+}, 10000);
 window.addEventListener("birrometro-auth", (event) => {
+  clearTimeout(authWatchdog);
   const user = event.detail;
   if (user) {
     activeUserId = user.uid;
@@ -668,6 +670,7 @@ window.addEventListener("birrometro-cloud-state", (event) => {
 });
 window.addEventListener("birrometro-sync-error", () => showToast("Sin conexión · mostrando la copia de esta cuenta"));
 window.addEventListener("birrometro-auth-error", () => {
+  clearTimeout(authWatchdog);
   $("#gate-google-login").disabled = false;
   $("#auth-gate-status").textContent = "No se pudo iniciar sesión. Inténtalo de nuevo.";
   if (!activeUserId) appShell.dataset.auth = "locked";

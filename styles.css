@@ -21,8 +21,22 @@ body { margin: 0; background: var(--paper); color: var(--ink); font-family: "Plu
 button, input, select { font: inherit; }
 button { -webkit-tap-highlight-color: transparent; }
 .app-shell { width: min(940px, 100%); min-height: 100vh; margin: auto; padding: 0 32px 130px; }
+.app-loader { display: none; position: fixed; z-index: 30; inset: 0; place-content: center; justify-items: center; padding: 30px; overflow: hidden; background: radial-gradient(circle at 50% 42%, #fff7df 0, var(--paper) 48%, #efede5 100%); text-align: center; }
+.app-shell[data-auth="pending"] .app-loader { display: grid; }
+.app-shell[data-auth="pending"] > .topbar { visibility: hidden; }
+.app-loader__art { position: relative; width: min(270px, 68vw); aspect-ratio: 1; display: grid; place-items: center; animation: loader-toast 1.15s cubic-bezier(.34,1.56,.64,1) infinite alternate; }
+.app-loader__art::after { content: ""; position: absolute; z-index: -1; width: 82%; height: 26%; bottom: 11%; border-radius: 50%; background: rgba(255,178,26,.14); filter: blur(15px); }
+.app-loader__art img { width: 100%; height: 100%; object-fit: contain; }
+.app-loader > strong { margin-top: -12px; font: 800 clamp(27px,7vw,38px)/1 "Bricolage Grotesque"; letter-spacing: -.05em; }
+.app-loader > span { margin-top: 9px; color: var(--muted); font-size: 10px; }
+.app-loader > i { height: 8px; margin-top: 20px; display: flex; gap: 6px; align-items: center; }
+.app-loader > i b { width: 7px; height: 7px; border-radius: 50%; background: var(--amber); animation: loader-bubble .8s ease-in-out infinite alternate; }
+.app-loader > i b:nth-child(2) { animation-delay: .16s; }
+.app-loader > i b:nth-child(3) { animation-delay: .32s; }
+@keyframes loader-toast { from { transform: translateY(3px) rotate(-2deg) scale(.97); } to { transform: translateY(-4px) rotate(2deg) scale(1.02); } }
+@keyframes loader-bubble { to { transform: translateY(-7px); opacity: .35; } }
 .auth-gate { display: none; min-height: calc(100vh - 78px); padding: 36px 0 80px; place-items: center; }
-.app-shell:not([data-auth="ready"]) .auth-gate { display: grid; }
+.app-shell[data-auth="locked"] .auth-gate { display: grid; }
 .app-shell:not([data-auth="ready"]) > main, .app-shell:not([data-auth="ready"]) > footer, .app-shell:not([data-auth="ready"]) > .bottom-nav { display: none; }
 .app-shell:not([data-auth="ready"]) #open-settings { visibility: hidden; }
 .auth-gate__card { width: min(470px, 100%); padding: 42px; border: 1px solid var(--line); border-radius: 30px; background: var(--card); box-shadow: var(--shadow); text-align: center; }
@@ -207,21 +221,7 @@ input, select { display: block; width: 100%; margin-top: 7px; padding: 13px 14px
 .primary-button { margin-top: 11px; background: var(--amber); color: var(--ink); }
 .danger-button { margin-top: 8px; background: transparent; color: var(--red); }
 .size-options { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
-.location-capture { margin: 16px 0 12px; padding: 9px; border: 1px solid var(--line); border-radius: 18px; background: var(--paper); }
-.location-capture__button { width: 100%; min-height: 56px; padding: 8px; display: grid; grid-template-columns: 42px 1fr; grid-template-rows: auto auto; align-items: center; gap: 1px 11px; border: 0; background: transparent; color: var(--ink); text-align: left; cursor: pointer; }
-.location-capture__button > span { grid-row: 1 / 3; display: grid; place-items: center; width: 42px; height: 42px; border-radius: 13px; background: #fff0c9; }
-.location-capture__button svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
-.location-capture__button strong, .location-capture__button small { display: block; }
-.location-capture__button strong { align-self: end; font: 800 13px "Bricolage Grotesque"; }
-.location-capture__button small { align-self: start; color: var(--muted); font-size: 8px; }
-.location-capture.is-loading .location-capture__button > span { animation: location-pulse 1s infinite alternate; }
-.location-capture.has-location { border-color: #9db7a7; background: #f1f7f2; }
-.location-capture.has-location .location-capture__button > span { background: var(--green); color: white; }
-.location-name { margin: 5px 7px 7px; color: var(--muted); font-size: 9px; font-weight: 700; }
-.location-name > span { display: flex; justify-content: space-between; }
-.location-name input { margin-top: 7px; background: white; }
-.location-remove { margin: 2px 7px 7px; padding: 0; border: 0; background: transparent; color: var(--red); font-size: 9px; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
-@keyframes location-pulse { to { transform: scale(.88); opacity: .55; } }
+.size-options.is-locating { pointer-events: none; opacity: .58; }
 .size-option { min-height: 83px; padding: 11px; display: grid; grid-template-columns: 45px 1fr 25px; align-items: center; gap: 9px; border: 1px solid var(--line); border-radius: 16px; background: var(--card); color: var(--ink); text-align: left; cursor: pointer; }
 .size-option:hover { border-color: var(--amber); background: #fff9e9; }
 .size-option strong, .size-option small { display: block; }

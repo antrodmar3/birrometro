@@ -7,6 +7,7 @@
     <meta name="description" content="Birrómetro: registra tu consumo de cerveza de forma sencilla y consciente." />
     <title>Birrómetro</title>
     <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="preload" href="assets/loading-beers.png" as="image" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Birrómetro" />
     <link rel="icon" href="icon.svg" type="image/svg+xml" />
@@ -14,11 +15,17 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIINfQ3ynhtm/gpZf9t45mGGgZxHdyW01c=" crossorigin="" />
-    <link rel="stylesheet" href="styles.css?v=30" />
+    <link rel="stylesheet" href="assets/vendor/leaflet.css?v=31" />
+    <link rel="stylesheet" href="styles.css?v=31" />
   </head>
   <body>
     <div class="app-shell" data-view="home" data-auth="pending">
+      <section class="app-loader" aria-label="Cargando Birrómetro" aria-live="polite">
+        <div class="app-loader__art"><img src="assets/loading-beers.png" alt="Dos jarras de cerveza brindando" /></div>
+        <strong>Preparando la ronda</strong>
+        <span>Recuperando tus birras…</span>
+        <i aria-hidden="true"><b></b><b></b><b></b></i>
+      </section>
       <header class="topbar">
         <a class="brand" href="#inicio" aria-label="Birrómetro, inicio">
           <span class="brand-mark" aria-hidden="true"><img src="icon.svg" alt="" /></span>
@@ -180,10 +187,10 @@
               <label class="location-period"><span>Periodo</span><select id="location-period"><option value="all">Todo</option><option value="year">Este año</option><option value="month">Este mes</option></select></label>
             </div>
             <div class="beer-map" id="beer-map" aria-label="Mapa de calor de los lugares donde has tomado cerveza">
-              <div class="map-empty" id="map-empty"><span aria-hidden="true"><img src="icon.svg" alt="" /></span><strong>Aún no hay ubicaciones</strong><small>Al registrar una cerveza, pulsa «Usar mi ubicación» para empezar a construir tu mapa.</small></div>
+              <div class="map-empty" id="map-empty"><span aria-hidden="true"><img src="icon.svg" alt="" /></span><strong>Aún no hay ubicaciones</strong><small>La ubicación se añadirá automáticamente a tus próximas birras cuando hayas permitido el acceso.</small></div>
             </div>
             <div class="location-stats"><article><strong id="map-location-count">0</strong><small>Zonas</small></article><article><strong id="map-favorite-place">—</strong><small>Más visitada</small></article><article><strong id="map-drink-count">0</strong><small>Birras mapeadas</small></article></div>
-            <p class="location-privacy"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>Las ubicaciones solo se guardan si tú lo decides y se sincronizan de forma privada con tu cuenta.</p>
+            <p class="location-privacy"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>La ubicación se captura automáticamente al registrar y se sincroniza de forma privada con tu cuenta.</p>
           </div>
         </section>
 
@@ -213,12 +220,7 @@
       <div class="size-sheet">
         <div class="sheet-handle" aria-hidden="true"></div>
         <div class="dialog-head"><div><p class="eyebrow">+1 cerveza</p><h2>¿Qué formato?</h2></div><button class="close-button" type="button" data-close-dialog aria-label="Cerrar">×</button></div>
-        <p class="dialog-copy">Guardaremos automáticamente el día y la hora.</p>
-        <div class="location-capture" id="location-capture">
-          <button class="location-capture__button" id="capture-location" type="button"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s7-6.1 7-12a7 7 0 1 0-14 0c0 5.9 7 12 7 12Z"/><circle cx="12" cy="9" r="2.4"/></svg></span><strong>Usar mi ubicación</strong><small id="location-capture-status">Opcional · solo para esta cerveza</small></button>
-          <label class="location-name" id="location-name-wrap" hidden><span>Nombre del sitio <small>opcional</small></span><input id="location-name" type="text" maxlength="60" autocomplete="off" placeholder="Ej. Bar La Esquina" /></label>
-          <button class="location-remove" id="clear-location" type="button" hidden>Quitar ubicación</button>
-        </div>
+        <p class="dialog-copy" id="add-dialog-copy">Guardaremos automáticamente el día, la hora y la ubicación.</p>
         <div class="size-options" role="group" aria-label="Elige el formato de cerveza">
           <button class="size-option" type="button" data-volume="1000" data-type="Litro"><span class="size-icon size-icon--litro" aria-hidden="true">1L</span><span><strong>Litro</strong><small>1.000 ml</small></span><b>+</b></button>
           <button class="size-option" type="button" data-volume="330" data-type="Lata"><span class="size-icon size-icon--slim" aria-hidden="true">33</span><span><strong>Lata</strong><small>330 ml · estilizada</small></span><b>+</b></button>
@@ -296,10 +298,10 @@
     </dialog>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-    <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
-    <script src="beer-catalog.js?v=30"></script>
-    <script type="module" src="firebase-sync.js?v=30"></script>
-    <script src="script.js?v=30"></script>
+    <script src="assets/vendor/leaflet.js?v=31"></script>
+    <script src="assets/vendor/leaflet-heat.js?v=31"></script>
+    <script src="beer-catalog.js?v=31"></script>
+    <script type="module" src="firebase-sync.js?v=31"></script>
+    <script src="script.js?v=31"></script>
   </body>
 </html>
