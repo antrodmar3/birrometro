@@ -1,4 +1,4 @@
-const CACHE = "cervezometro-v13";
+const CACHE = "cervezometro-v14";
 const ASSETS = ["./", "index.html", "styles.css", "script.js", "manifest.webmanifest", "icon.svg"];
 self.addEventListener("install", (event) => event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(ASSETS))));
 self.addEventListener("activate", (event) => event.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((key) => key !== CACHE).map((key) => caches.delete(key))))));
