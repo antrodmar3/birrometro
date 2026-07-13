@@ -14,7 +14,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=20" />
+    <link rel="stylesheet" href="styles.css?v=21" />
   </head>
   <body>
     <div class="app-shell" data-view="home">
@@ -145,13 +145,13 @@
         <section class="album-section standalone-view" id="album" aria-labelledby="album-title">
           <div class="section-title"><div><p class="eyebrow">Tu colección</p><h2 id="album-title">Álbum de cervezas</h2></div><span class="section-badge" id="album-progress">0 probadas</span></div>
           <div class="album-toolbar">
-            <label class="album-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.2 4.2"/></svg><input id="beer-search" type="search" autocomplete="off" placeholder="Busca una cerveza o marca…" aria-label="Buscar cerveza" /></label>
+            <label class="album-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.2 4.2"/></svg><input id="beer-search" type="search" autocomplete="off" placeholder="Busca por cerveza o país…" aria-label="Buscar cerveza" /></label>
             <div class="album-filters" role="group" aria-label="Filtrar álbum"><button class="is-active" type="button" data-album-filter="all">Catálogo</button><button type="button" data-album-filter="tried">Probadas</button></div>
           </div>
-          <div class="album-summary"><div><strong id="album-tried-count">0</strong><small>Probadas</small></div><div><strong id="album-catalog-count">—</strong><small>En catálogo</small></div><p id="album-source-status">Cargando catálogo abierto…</p></div>
+          <div class="album-summary"><div><strong id="album-tried-count">0</strong><small>Probadas</small></div><div><strong id="album-catalog-count">—</strong><small>En catálogo</small></div><p id="album-source-status">Catálogo cerrado y revisado</p></div>
           <div class="beer-album-grid" id="beer-album-grid" aria-live="polite"></div>
           <div class="album-empty" id="album-empty" hidden><span>⌕</span><strong>No encontramos esa cerveza</strong><small>Prueba con la marca, el país o una parte del nombre.</small></div>
-          <p class="album-attribution">Catálogo e imágenes: <a href="https://www.wikidata.org/" target="_blank" rel="noreferrer">Wikidata</a> y <a href="https://commons.wikimedia.org/" target="_blank" rel="noreferrer">Wikimedia Commons</a>. Los datos pueden variar según su disponibilidad.</p>
+          <p class="album-attribution">Selección cerrada de marcas revisadas por Birrómetro. Logos e imágenes alojados en <a href="https://commons.wikimedia.org/" target="_blank" rel="noreferrer">Wikimedia Commons</a>.</p>
         </section>
       </main>
       <footer><span>Bebe con cabeza.</span><span>Sincronización privada con tu cuenta.</span></footer>
@@ -220,7 +220,7 @@
     </dialog>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script type="module" src="firebase-sync.js?v=20"></script>
-    <script src="script.js?v=20"></script>
+    <script type="module" src="firebase-sync.js?v=21"></script>
+    <script src="script.js?v=21"></script>
   </body>
 </html>

@@ -1,11 +1,69 @@
 const STORAGE_KEY = "birrometro-v1";
 const LEGACY_STORAGE_KEY = ["cervezo", "metro-v1"].join("");
+const CLOSED_BEER_CATALOG = [
+  {id:"Q610086",name:"Achel",country:"Bélgica",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Achellogo.png"},
+  {id:"Q478119",name:"Amstel",country:"Países Bajos",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Amstel%20coaster.jpg"},
+  {id:"Q3624753",name:"Asahi Super Dry",country:"Japón",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Asahi%20superdry%20japan.JPG"},
+  {id:"Q26974604",name:"Beamish",country:"Irlanda",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Beamish%20Genuine%20Irish%20Stout.jpg"},
+  {id:"Q971751",name:"Bintang",country:"Indonesia",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Bintang%20Beer%20by%20the%20Beach.jpg"},
+  {id:"Q519781",name:"Blanche de Namur",country:"Bélgica",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Blanche%20de%20Namur.JPG"},
+  {id:"Q8248915",name:"Blue Moon",country:"Estados Unidos",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Blue%20Moon%20beer%20with%20orange.jpg"},
+  {id:"Q897293",name:"Brahma",country:"Brasil",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Logotipo%20da%20Brahma%20%282025%29.svg"},
+  {id:"Q610672",name:"Budweiser",country:"Estados Unidos",image:"https://commons.wikimedia.org/wiki/Special:FilePath/StLouisABPackaging%20Plant.JPG"},
+  {id:"Q33105701",name:"Chimay",country:"Bélgica",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Chimays.jpg"},
+  {id:"Q1104762",name:"Cobra Beer",country:"Reino Unido",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Cobra%20beer%202.jpg"},
+  {id:"Q864987",name:"Corona Extra",country:"México",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Corona%20Extra%20text%20logo.svg"},
+  {id:"Q1142160",name:"Cruzcampo",country:"España",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Logo%20de%20Cruzcampo.png"},
+  {id:"Q2646636",name:"Desperados",country:"Francia",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Desperados.jpg"},
+  {id:"Q3136656",name:"Dos Equis",country:"México",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Cerveca%20xxlager.jpg"},
+  {id:"Q1773786",name:"Duvel",country:"Bélgica",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Duvel%20Logo.png"},
+  {id:"Q1295815",name:"Efes Pilsener",country:"Turquía",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Efes%20Pilsener.JPG"},
+  {id:"Q3394030",name:"Estrella Galicia",country:"España",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Estrella%20Galicia%20escudo%20color%20vectorial%20HDJR.svg"},
+  {id:"Q1370611",name:"Estrella Damm",country:"España",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Primera%20botella%20Estrella%20Damm.jpg"},
+  {id:"Q1423785",name:"Foster's Lager",country:"Australia",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Logo%20of%20Foster%27s%20Lager.svg"},
+  {id:"Q153075",name:"Grolsch",country:"Países Bajos",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Grolsch%20Logo.png"},
+  {id:"Q1959068",name:"Gulden Draak",country:"Bélgica",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Guldendraak.jpg"},
+  {id:"Q194297",name:"Guinness",country:"Irlanda",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Guinness-Werbung%20%28G%C3%B6rlitz%29.jpg"},
+  {id:"Q854383",name:"Heineken",country:"Países Bajos",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Heineken%20logo.svg"},
+  {id:"Q2239073",name:"Hertog Jan",country:"Países Bajos",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Mus%C3%A9e%20Europ%C3%A9en%20de%20la%20Bi%C3%A8re%2C%20Beer%20coaster%20pic-091.JPG"},
+  {id:"Q153960",name:"Jupiler",country:"Bélgica",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Jupiler%20logo.jpg"},
+  {id:"Q129487",name:"Kamenitza",country:"Bulgaria",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Kamenitza%20logo.jpg"},
+  {id:"Q798067",name:"Karhu",country:"Finlandia",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Karhu.jpg"},
+  {id:"Q1572281",name:"Kingfisher",country:"India",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Kingfisher%20beer%20bottle.jpg"},
+  {id:"Q1741320",name:"Kilkenny",country:"Irlanda",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Kilkenny%20Irish%20beer.JPG"},
+  {id:"Q615718",name:"Kwak",country:"Bélgica",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Kwak.jpg"},
+  {id:"Q2744746",name:"La Chouffe",country:"Bélgica",image:"https://commons.wikimedia.org/wiki/Special:FilePath/La%20Chouffe%20bottle.jpg"},
+  {id:"Q590921",name:"La Trappe",country:"Países Bajos",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Trappist%20003.JPG"},
+  {id:"Q1341618",name:"Leffe",country:"Bélgica",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Leffe%20Bier%2C%20historisches%20Plakat.JPG"},
+  {id:"Q18161195",name:"London Pride",country:"Reino Unido",image:"https://commons.wikimedia.org/wiki/Special:FilePath/London%20Pride%20bottle%20and%20glass.jpg"},
+  {id:"Q2253723",name:"Nastro Azzurro",country:"Italia",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Bottiglia%20di%20birra%20Nastro%20Azzurro.jpg"},
+  {id:"Q2080900",name:"Norrlands Guld",country:"Suecia",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Norrlands%20Guld%20%287449915078%29.jpg"},
+  {id:"Q2045297",name:"Pabst Blue Ribbon",country:"Estados Unidos",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Pabst%20Blue%20Ribbon%20bottle.jpg"},
+  {id:"Q331630",name:"Pilsner Urquell",country:"República Checa",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Pilsner%20Urquell%20logo.svg"},
+  {id:"Q503112",name:"Pilsen Callao",country:"Perú",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Pilsencallao.jpg"},
+  {id:"Q595750",name:"Quilmes",country:"Argentina",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Quilmes%20Logo.svg"},
+  {id:"Q2417742",name:"Red Stripe",country:"Jamaica",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Red%20Stripe%202012.JPG"},
+  {id:"Q134454567",name:"Sagres",country:"Portugal",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Sagres%20beer.jpg"},
+  {id:"Q21286736",name:"Samuel Adams",country:"Estados Unidos",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Samuel%20Adams%20beer%20glass.JPG"},
+  {id:"Q2140520",name:"Singha",country:"Tailandia",image:"https://commons.wikimedia.org/wiki/Special:FilePath/BiereSingha.jpg"},
+  {id:"Q1073087",name:"Smithwick's",country:"Irlanda",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Smithwicks%20pint.JPG"},
+  {id:"Q929276",name:"Stella Artois",country:"Bélgica",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Stella%20Artois%20new%20logo.png"},
+  {id:"Q935317",name:"Staropramen",country:"República Checa",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Staropramen.jpg"},
+  {id:"Q1862698",name:"Tiger",country:"Singapur",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Tiger%20-%20Asian%20Lager%2C%202019.jpg"},
+  {id:"Q2388771",name:"Tripel Karmeliet",country:"Bélgica",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Tripel%20Karmeliet%20glas.jpg"},
+  {id:"Q1071385",name:"Velkopopovický Kozel",country:"República Checa",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Velkopopovick%C3%BD%20Kozel%20logo.svg"},
+  {id:"Q3390014",name:"Voll-Damm",country:"España",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Voll-DammBotella33cl.jpg"},
+  {id:"Q3503168",name:"Żywiec",country:"Polonia",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Zywiec%20Beer.JPG"}
+];
 const state = loadState();
 let volumeUnit = "L";
-let beerCatalog = [];
+const beerCatalog = CLOSED_BEER_CATALOG;
 let albumFilter = "all";
-let beerSearchTimer = null;
-let catalogRequest = null;
+const beerCatalogById = new Map(beerCatalog.map((beer) => [beer.id, beer]));
+function sanitizeAlbum(entries) {
+  return (Array.isArray(entries) ? entries : []).filter((entry) => beerCatalogById.has(entry.id)).map((entry) => ({...beerCatalogById.get(entry.id),markedAt:entry.markedAt || new Date().toISOString()}));
+}
+state.album = sanitizeAlbum(state.album);
 const $ = (selector) => document.querySelector(selector);
 const els = {
   todayCount: $("#today-count"), yearCount: $("#year-count"),
@@ -198,74 +256,20 @@ function normalizeCommonsImage(value) {
     return url.href;
   } catch { return ""; }
 }
-function commonsFileUrl(filename) {
-  return filename ? `https://commons.wikimedia.org/wiki/Special:Redirect/file/${encodeURIComponent(filename)}?width=420` : "";
-}
-function mergeBeerCatalog(items) {
-  const merged = new Map(beerCatalog.map((beer) => [beer.id, beer]));
-  items.forEach((beer) => {
-    if (!/^Q\d+$/.test(beer.id) || !beer.name || /^Q\d+$/.test(beer.name)) return;
-    const current = merged.get(beer.id) || {};
-    merged.set(beer.id, {...current, ...beer, image:normalizeCommonsImage(beer.image) || current.image || ""});
-  });
-  beerCatalog = [...merged.values()];
-}
-async function loadBeerCatalog() {
-  if (catalogRequest) return catalogRequest;
-  const query = `SELECT ?item ?itemLabel ?description ?image ?logo ?sitelinks WHERE {
-    ?item wdt:P31/wdt:P279* wd:Q15075508; wikibase:sitelinks ?sitelinks.
-    OPTIONAL { ?item wdt:P18 ?image. }
-    OPTIONAL { ?item wdt:P154 ?logo. }
-    OPTIONAL { ?item schema:description ?description. FILTER(LANG(?description) = "es" || LANG(?description) = "en") }
-    FILTER(BOUND(?image) || BOUND(?logo))
-    SERVICE wikibase:label { bd:serviceParam wikibase:language "es,en". }
-  } ORDER BY DESC(?sitelinks) LIMIT 80`;
-  $("#album-source-status").textContent = "Cargando catálogo abierto…";
-  catalogRequest = fetch(`https://query.wikidata.org/sparql?format=json&query=${encodeURIComponent(query)}`, {headers:{Accept:"application/sparql-results+json"}})
-    .then((response) => { if (!response.ok) throw new Error("catalog"); return response.json(); })
-    .then((data) => {
-      mergeBeerCatalog((data.results?.bindings || []).map((binding) => ({
-        id:binding.item?.value?.split("/").pop() || "", name:binding.itemLabel?.value || "",
-        description:binding.description?.value || "Marca de cerveza", image:binding.logo?.value || binding.image?.value || ""
-      })));
-      $("#album-source-status").textContent = "Catálogo abierto de Wikidata"; renderBeerAlbum();
-    })
-    .catch(() => { $("#album-source-status").textContent = "No se pudo cargar · inténtalo de nuevo"; })
-    .finally(() => { catalogRequest = null; });
-  return catalogRequest;
-}
-async function searchRemoteBeers(term) {
-  const searchUrl = new URL("https://www.wikidata.org/w/api.php");
-  Object.entries({action:"wbsearchentities",search:term,language:"es",uselang:"es",type:"item",limit:"20",origin:"*",format:"json"}).forEach(([key,value]) => searchUrl.searchParams.set(key,value));
-  const searchResponse = await fetch(searchUrl); if (!searchResponse.ok) throw new Error("search");
-  const found = (await searchResponse.json()).search || []; const beerWords = /cerve|beer|brew|bier|birra|lager|ale|stout|pils/i;
-  const candidates = found.filter((item) => beerWords.test(`${item.label} ${item.description || ""}`)).slice(0,12);
-  if (!candidates.length) return;
-  const entityUrl = new URL("https://www.wikidata.org/w/api.php");
-  Object.entries({action:"wbgetentities",ids:candidates.map((item) => item.id).join("|"),props:"claims",origin:"*",format:"json"}).forEach(([key,value]) => entityUrl.searchParams.set(key,value));
-  const entityResponse = await fetch(entityUrl); const entities = entityResponse.ok ? (await entityResponse.json()).entities || {} : {};
-  mergeBeerCatalog(candidates.map((item) => {
-    const claims = entities[item.id]?.claims || {};
-    const filename = claims.P154?.[0]?.mainsnak?.datavalue?.value || claims.P18?.[0]?.mainsnak?.datavalue?.value || "";
-    return {id:item.id,name:item.label,description:item.description || "Marca de cerveza",image:commonsFileUrl(filename)};
-  }));
-}
 function renderBeerAlbum() {
-  const marked = new Map((state.album || []).map((beer) => [beer.id, beer]));
-  const combined = new Map(beerCatalog.map((beer) => [beer.id, beer]));
-  marked.forEach((beer,id) => { if (!combined.has(id)) combined.set(id,beer); });
+  const catalogIds = new Set(beerCatalog.map((beer) => beer.id));
+  const marked = new Map((state.album || []).filter((beer) => catalogIds.has(beer.id)).map((beer) => [beer.id, beer]));
   const term = ($("#beer-search")?.value || "").trim().toLocaleLowerCase("es");
-  const visible = [...combined.values()].filter((beer) => albumFilter !== "tried" || marked.has(beer.id))
-    .filter((beer) => !term || `${beer.name} ${beer.description || ""}`.toLocaleLowerCase("es").includes(term))
+  const visible = beerCatalog.filter((beer) => albumFilter !== "tried" || marked.has(beer.id))
+    .filter((beer) => !term || `${beer.name} ${beer.country}`.toLocaleLowerCase("es").includes(term))
     .sort((a,b) => Number(marked.has(b.id)) - Number(marked.has(a.id)) || a.name.localeCompare(b.name,"es",{sensitivity:"base"}));
   $("#album-progress").textContent = `${marked.size} probadas`; $("#album-tried-count").textContent = marked.size;
   $("#album-catalog-count").textContent = beerCatalog.length || "—";
   $("#beer-album-grid").innerHTML = visible.map((beer) => {
     const tried = marked.has(beer.id); const image = normalizeCommonsImage(beer.image); const initial = beer.name.trim().charAt(0).toUpperCase();
-    return `<button class="beer-card${tried ? " is-tried" : ""}" type="button" data-beer-id="${beer.id}" aria-pressed="${tried}"><span class="beer-card__image">${image ? `<img src="${escapeHtml(image)}" alt="" loading="lazy" referrerpolicy="no-referrer" />` : `<span class="beer-card__fallback">${escapeHtml(initial)}</span>`}</span><span class="beer-card__copy"><strong>${escapeHtml(beer.name)}</strong><small>${escapeHtml(beer.description || "Marca de cerveza")}</small></span><span class="beer-card__check" aria-hidden="true">${tried ? "✓" : "+"}</span></button>`;
+    return `<button class="beer-card${tried ? " is-tried" : ""}" type="button" data-beer-id="${beer.id}" aria-pressed="${tried}"><span class="beer-card__image">${image ? `<img src="${escapeHtml(image)}" alt="Logo de ${escapeHtml(beer.name)}" loading="lazy" referrerpolicy="no-referrer" />` : `<span class="beer-card__fallback">${escapeHtml(initial)}</span>`}</span><span class="beer-card__copy"><strong>${escapeHtml(beer.name)}</strong><small><span class="country-dot" aria-hidden="true"></span>${escapeHtml(beer.country)}</small></span><span class="beer-card__check" aria-hidden="true">${tried ? "✓" : "+"}</span></button>`;
   }).join("");
-  const loadingInitialCatalog = !beerCatalog.length && !term && albumFilter === "all" && $("#album-source-status").textContent.startsWith("Cargando");
-  $("#album-empty").hidden = visible.length > 0 || loadingInitialCatalog;
+  $("#album-empty").hidden = visible.length > 0;
 }
 function render() {
   const today = since(startOfDay()); const week = since(startOfWeek()); const month = since(startOfMonth());
@@ -328,7 +332,7 @@ document.querySelectorAll(".nav-item").forEach((button) => button.addEventListen
   const standalone = targetId === "historial" || targetId === "perfil" || targetId === "album";
   appShell.dataset.view = standalone ? targetId : "home";
   document.querySelectorAll(".nav-item").forEach((item) => item.classList.toggle("is-active", item === button));
-  if (standalone) { if (targetId === "album") loadBeerCatalog(); window.scrollTo({top:0, behavior:"smooth"}); return; }
+  if (standalone) { window.scrollTo({top:0, behavior:"smooth"}); return; }
   requestAnimationFrame(() => target.scrollIntoView({behavior:"smooth", block:"start"}));
 }));
 if ("IntersectionObserver" in window) {
@@ -356,7 +360,7 @@ window.addEventListener("birrometro-auth", (event) => {
 });
 window.addEventListener("birrometro-cloud-state", (event) => {
   if (!event.detail?.drinks) return;
-  state.drinks = event.detail.drinks; state.imports = event.detail.imports || {}; state.album = event.detail.album || [];
+  state.drinks = event.detail.drinks; state.imports = event.detail.imports || {}; state.album = sanitizeAlbum(event.detail.album);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); render(); showToast("Datos sincronizados");
 });
 window.addEventListener("birrometro-auth-error", () => showToast("No se pudo iniciar sesión con Google"));
@@ -371,13 +375,7 @@ document.querySelectorAll("[data-album-filter]").forEach((button) => button.addE
   albumFilter = button.dataset.albumFilter;
   document.querySelectorAll("[data-album-filter]").forEach((item) => item.classList.toggle("is-active", item === button)); renderBeerAlbum();
 }));
-$("#beer-search").addEventListener("input", (event) => {
-  renderBeerAlbum(); clearTimeout(beerSearchTimer); const term = event.currentTarget.value.trim(); if (term.length < 2) return;
-  beerSearchTimer = setTimeout(() => {
-    $("#album-source-status").textContent = "Buscando en Wikidata…";
-    searchRemoteBeers(term).then(() => { $("#album-source-status").textContent = "Resultados de Wikidata"; renderBeerAlbum(); }).catch(() => { $("#album-source-status").textContent = "No se pudo completar la búsqueda"; });
-  },450);
-});
+$("#beer-search").addEventListener("input", renderBeerAlbum);
 if ("serviceWorker" in navigator && location.protocol !== "file:") {
   let refreshing = false;
   navigator.serviceWorker.addEventListener("controllerchange", () => {
