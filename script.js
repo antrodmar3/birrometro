@@ -263,6 +263,17 @@ function normalizeCommonsImage(value) {
     return url.href;
   } catch { return ""; }
 }
+function countryFlag(country) {
+  const flags = {
+    "Alemania":"🇩🇪", "Argentina":"🇦🇷", "Australia":"🇦🇺", "Bélgica":"🇧🇪", "Brasil":"🇧🇷",
+    "Bulgaria":"🇧🇬", "España":"🇪🇸", "Estados Unidos":"🇺🇸", "Finlandia":"🇫🇮", "Francia":"🇫🇷",
+    "India":"🇮🇳", "Indonesia":"🇮🇩", "Irlanda":"🇮🇪", "Italia":"🇮🇹", "Jamaica":"🇯🇲",
+    "Japón":"🇯🇵", "México":"🇲🇽", "Países Bajos":"🇳🇱", "Perú":"🇵🇪", "Polonia":"🇵🇱",
+    "Portugal":"🇵🇹", "Reino Unido":"🇬🇧", "República Checa":"🇨🇿", "Singapur":"🇸🇬", "Suecia":"🇸🇪",
+    "Tailandia":"🇹🇭", "Turquía":"🇹🇷"
+  };
+  return flags[country] || "🌍";
+}
 function renderBeerAlbum() {
   const catalogIds = new Set(beerCatalog.map((beer) => beer.id));
   const marked = new Map((state.album || []).filter((beer) => catalogIds.has(beer.id)).map((beer) => [beer.id, beer]));
@@ -274,7 +285,7 @@ function renderBeerAlbum() {
   $("#album-catalog-count").textContent = beerCatalog.length || "—";
   $("#beer-album-grid").innerHTML = visible.map((beer) => {
     const tried = marked.has(beer.id); const image = normalizeCommonsImage(beer.image); const initial = beer.name.trim().charAt(0).toUpperCase();
-    return `<button class="beer-card${tried ? " is-tried" : ""}" type="button" data-beer-id="${beer.id}" aria-pressed="${tried}"><span class="beer-card__image">${image ? `<img src="${escapeHtml(image)}" alt="Logo de ${escapeHtml(beer.name)}" loading="lazy" referrerpolicy="no-referrer" />` : `<span class="beer-card__fallback">${escapeHtml(initial)}</span>`}</span><span class="beer-card__copy"><strong>${escapeHtml(beer.name)}</strong><small><span class="country-dot" aria-hidden="true"></span>${escapeHtml(beer.country)}</small></span><span class="beer-card__check" aria-hidden="true">${tried ? "✓" : "+"}</span></button>`;
+    return `<button class="beer-card${tried ? " is-tried" : ""}" type="button" data-beer-id="${beer.id}" aria-pressed="${tried}"><span class="beer-card__image">${image ? `<img src="${escapeHtml(image)}" alt="Logo de ${escapeHtml(beer.name)}" loading="lazy" referrerpolicy="no-referrer" />` : `<span class="beer-card__fallback">${escapeHtml(initial)}</span>`}</span><span class="beer-card__copy"><strong>${escapeHtml(beer.name)}</strong><small class="country-label"><span class="country-flag" aria-hidden="true">${countryFlag(beer.country)}</span><span class="country-name">${escapeHtml(beer.country)}</span></small></span><span class="beer-card__check" aria-hidden="true">${tried ? "✓" : "+"}</span></button>`;
   }).join("");
   $("#album-empty").hidden = visible.length > 0;
 }

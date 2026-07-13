@@ -14,7 +14,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=22" />
+    <link rel="stylesheet" href="styles.css?v=23" />
   </head>
   <body>
     <div class="app-shell" data-view="home" data-auth="pending">
@@ -159,7 +159,7 @@
             <label class="album-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.2 4.2"/></svg><input id="beer-search" type="search" autocomplete="off" placeholder="Busca por cerveza o país…" aria-label="Buscar cerveza" /></label>
             <div class="album-filters" role="group" aria-label="Filtrar álbum"><button class="is-active" type="button" data-album-filter="all">Catálogo</button><button type="button" data-album-filter="tried">Probadas</button></div>
           </div>
-          <div class="album-summary"><div><strong id="album-tried-count">0</strong><small>Probadas</small></div><div><strong id="album-catalog-count">—</strong><small>En catálogo</small></div><p id="album-source-status">Catálogo cerrado y revisado</p></div>
+          <div class="album-summary"><div><strong id="album-tried-count">0</strong><small>Probadas</small></div><div><strong id="album-catalog-count">—</strong><small>En catálogo</small></div></div>
           <div class="beer-album-grid" id="beer-album-grid" aria-live="polite"></div>
           <div class="album-empty" id="album-empty" hidden><span>⌕</span><strong>No encontramos esa cerveza</strong><small>Prueba con la marca, el país o una parte del nombre.</small></div>
           <p class="album-attribution">Selección cerrada de marcas revisadas por Birrómetro. Logos e imágenes alojados en <a href="https://commons.wikimedia.org/" target="_blank" rel="noreferrer">Wikimedia Commons</a>.</p>
@@ -231,7 +231,7 @@
     </dialog>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script type="module" src="firebase-sync.js?v=22"></script>
-    <script src="script.js?v=22"></script>
+    <script type="module" src="firebase-sync.js?v=23"></script>
+    <script src="script.js?v=23"></script>
   </body>
 </html>

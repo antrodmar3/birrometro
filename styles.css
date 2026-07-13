@@ -277,18 +277,18 @@ input, select { display: block; width: 100%; margin-top: 7px; padding: 13px 14px
 .album-summary div strong, .album-summary div small { display: block; }
 .album-summary div strong { font: 800 20px "Bricolage Grotesque"; }
 .album-summary div small { color: var(--muted); font-size: 8px; }
-.album-summary p { margin-left: auto; color: var(--muted); font-size: 9px; }
 .beer-album-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 11px; }
 .beer-card { position: relative; min-width: 0; overflow: hidden; padding: 0; border: 1px solid var(--line); border-radius: 19px; background: var(--card); color: var(--ink); text-align: left; cursor: pointer; transition: transform .18s, border-color .18s, box-shadow .18s; }
 .beer-card:hover { transform: translateY(-3px); border-color: var(--amber); box-shadow: 0 12px 25px rgba(23,24,18,.1); }
 .beer-card__image { height: 145px; display: grid; place-items: center; overflow: hidden; background: linear-gradient(145deg,#efede6,#faf8f1); }
 .beer-card__image img { width: 100%; height: 100%; object-fit: contain; padding: 12px; }
 .beer-card__fallback { font: 800 32px "Bricolage Grotesque"; color: #b5b1a5; }
-.beer-card__copy { display: block; min-height: 78px; padding: 12px; }
+.beer-card__copy { display: block; min-height: 91px; padding: 12px; }
 .beer-card__copy strong, .beer-card__copy small { display: block; overflow: hidden; text-overflow: ellipsis; }
 .beer-card__copy strong { font: 700 13px/1.2 "Bricolage Grotesque"; white-space: nowrap; }
-.beer-card__copy small { margin-top: 5px; color: var(--muted); font-size: 8px; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-.country-dot { display: inline-block; width: 6px; height: 6px; margin-right: 6px; border-radius: 50%; background: var(--amber); vertical-align: 1px; }
+.beer-card__copy .country-label { width: fit-content; max-width: 100%; margin-top: 9px; padding: 5px 9px 5px 6px; display: flex; align-items: center; gap: 7px; overflow: visible; border: 1px solid var(--line); border-radius: 999px; background: var(--paper); color: var(--ink-soft); line-height: 1; }
+.country-flag { flex: 0 0 auto; font-size: 17px; line-height: 1; filter: drop-shadow(0 1px 1px rgba(23,24,18,.14)); }
+.country-name { min-width: 0; overflow: hidden; font-size: 10px; font-weight: 700; line-height: 1.2; text-overflow: ellipsis; white-space: nowrap; }
 .beer-card__check { position: absolute; top: 9px; right: 9px; display: grid; place-items: center; width: 31px; height: 31px; border: 2px solid white; border-radius: 11px; background: rgba(23,24,18,.78); color: white; font-size: 15px; box-shadow: 0 5px 12px rgba(0,0,0,.16); }
 .beer-card.is-tried { border-color: var(--amber); }
 .beer-card.is-tried .beer-card__check { background: var(--amber); color: var(--ink); }
@@ -310,7 +310,6 @@ input, select { display: block; width: 100%; margin-top: 7px; padding: 13px 14px
   .album-filters { height: 44px; }
   .album-filters button { flex: 1; }
   .album-summary { gap: 16px; padding: 12px 14px; }
-  .album-summary p { max-width: 120px; text-align: right; }
   .beer-album-grid { grid-template-columns: repeat(2,1fr); }
   .beer-card__image { height: 132px; }
   .topbar { height: 65px; }
