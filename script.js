@@ -239,14 +239,18 @@ $("#undo-last").addEventListener("click", () => {
   state.drinks = state.drinks.filter((drink) => drink.id !== latest.id); save(); render(); els.moreDialog.close(); showToast("Último registro deshecho");
 });
 $("#go-patterns").addEventListener("click", () => { els.moreDialog.close(); $("#patterns-title").scrollIntoView({behavior:"smooth", block:"start"}); });
+const appShell = document.querySelector(".app-shell");
 document.querySelectorAll(".nav-item").forEach((button) => button.addEventListener("click", () => {
-  const target = document.getElementById(button.dataset.target); if (!target) return;
+  const targetId = button.dataset.target; const target = document.getElementById(targetId); if (!target) return;
+  const standalone = targetId === "historial" || targetId === "perfil";
+  appShell.dataset.view = standalone ? targetId : "home";
   document.querySelectorAll(".nav-item").forEach((item) => item.classList.toggle("is-active", item === button));
-  target.scrollIntoView({behavior:"smooth", block:"start"});
+  if (standalone) { window.scrollTo({top:0, behavior:"smooth"}); return; }
+  requestAnimationFrame(() => target.scrollIntoView({behavior:"smooth", block:"start"}));
 }));
 if ("IntersectionObserver" in window) {
-  const navObserver = new IntersectionObserver((entries) => { entries.forEach((entry) => { if (!entry.isIntersecting) return; document.querySelectorAll(".nav-item").forEach((item) => item.classList.toggle("is-active", item.dataset.target === entry.target.id)); }); }, {rootMargin:"-25% 0px -65% 0px"});
-  ["inicio","formatos","datos","historial","perfil"].forEach((id) => { const section = document.getElementById(id); if (section) navObserver.observe(section); });
+  const navObserver = new IntersectionObserver((entries) => { entries.forEach((entry) => { if (!entry.isIntersecting || appShell.dataset.view !== "home") return; document.querySelectorAll(".nav-item").forEach((item) => item.classList.toggle("is-active", item.dataset.target === entry.target.id)); }); }, {rootMargin:"-25% 0px -65% 0px"});
+  ["inicio","formatos","datos"].forEach((id) => { const section = document.getElementById(id); if (section) navObserver.observe(section); });
 }
 els.history.addEventListener("click", (event) => { const button = event.target.closest("[data-id]"); if (!button) return; state.drinks = state.drinks.filter((drink) => drink.id !== button.dataset.id); save(); render(); showToast("Registro eliminado"); });
 $("#clear-data").addEventListener("click", () => { if (!confirm("¿Seguro que quieres borrar todo el historial?")) return; state.drinks = []; save(); render(); els.settingsDialog.close(); showToast("Historial borrado"); });
