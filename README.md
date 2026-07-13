@@ -38,4 +38,4 @@ También se puede abrir `index.html` directamente, aunque la instalación como P
 
 Cada cambio enviado a la rama `main` se publica automáticamente con GitHub Pages mediante GitHub Actions.
 
-La sincronización con Authentication y Firestore se añadirá cuando exista un proyecto Firebase y sus credenciales web.
+La app sincroniza de forma privada los datos de cada usuario mediante Google Authentication y Cloud Firestore.

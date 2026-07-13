@@ -1,4 +1,5 @@
-const STORAGE_KEY = "cervezometro-v1";
+const STORAGE_KEY = "birrometro-v1";
+const LEGACY_STORAGE_KEY = ["cervezo", "metro-v1"].join("");
 const state = loadState();
 let volumeUnit = "L";
 const $ = (selector) => document.querySelector(selector);
@@ -12,11 +13,13 @@ const els = {
 
 function loadState() {
   try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    const source = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
+    const saved = JSON.parse(source);
+    if (source && !localStorage.getItem(STORAGE_KEY)) localStorage.setItem(STORAGE_KEY, source);
     return { drinks: Array.isArray(saved?.drinks) ? saved.drinks : [], imports: saved?.imports || {} };
   } catch { return { drinks: [], imports: {} }; }
 }
-function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); window.dispatchEvent(new CustomEvent("birrometro-state-save", {detail:state})); }
 function importInitialTotals() {
   if (state.imports.initialTally207) return;
   const tally = [
@@ -206,6 +209,10 @@ function render() {
   renderFormatStats();
   reorderFormatOptions();
   renderInsights();
+  const favorite = getFormatStats()[0];
+  $("#profile-total").textContent = state.drinks.length;
+  $("#profile-liters").textContent = `${(state.drinks.reduce((sum, drink) => sum + Number(drink.volume || 0), 0) / 1000).toLocaleString("es-ES", {maximumFractionDigits:1})} L`;
+  $("#profile-favorite").textContent = favorite?.type || "—";
 }
 function escapeHtml(value) { const node = document.createElement("span"); node.textContent = value; return node.innerHTML; }
 
@@ -239,7 +246,7 @@ document.querySelectorAll(".nav-item").forEach((button) => button.addEventListen
 }));
 if ("IntersectionObserver" in window) {
   const navObserver = new IntersectionObserver((entries) => { entries.forEach((entry) => { if (!entry.isIntersecting) return; document.querySelectorAll(".nav-item").forEach((item) => item.classList.toggle("is-active", item.dataset.target === entry.target.id)); }); }, {rootMargin:"-25% 0px -65% 0px"});
-  ["inicio","formatos","datos","historial"].forEach((id) => { const section = document.getElementById(id); if (section) navObserver.observe(section); });
+  ["inicio","formatos","datos","historial","perfil"].forEach((id) => { const section = document.getElementById(id); if (section) navObserver.observe(section); });
 }
 els.history.addEventListener("click", (event) => { const button = event.target.closest("[data-id]"); if (!button) return; state.drinks = state.drinks.filter((drink) => drink.id !== button.dataset.id); save(); render(); showToast("Registro eliminado"); });
 $("#clear-data").addEventListener("click", () => { if (!confirm("¿Seguro que quieres borrar todo el historial?")) return; state.drinks = []; save(); render(); els.settingsDialog.close(); showToast("Historial borrado"); });
@@ -250,6 +257,22 @@ $("#export-data").addEventListener("click", exportData);
 $("#export-data-settings").addEventListener("click", exportData);
 document.querySelectorAll("dialog").forEach((dialog) => dialog.addEventListener("click", (event) => { if (event.target === dialog) dialog.close(); }));
 document.querySelectorAll("[data-close-dialog]").forEach((button) => button.addEventListener("click", () => button.closest("dialog").close()));
+$("#google-login").addEventListener("click", () => window.dispatchEvent(new Event("birrometro-login")));
+$("#google-logout").addEventListener("click", () => window.dispatchEvent(new Event("birrometro-logout")));
+window.addEventListener("birrometro-auth", (event) => {
+  const user = event.detail;
+  $("#profile-sync").textContent = user ? "Sincronizado" : "Sin conectar";
+  $("#google-login").hidden = Boolean(user); $("#google-logout").hidden = !user;
+  $("#profile-name").textContent = user?.displayName || "Tus datos, en todos tus dispositivos";
+  $("#profile-email").textContent = user?.email || "Inicia sesión para sincronizar Birrómetro";
+  $("#profile-avatar").innerHTML = user?.photoURL ? `<img src="${escapeHtml(user.photoURL)}" alt="" referrerpolicy="no-referrer" />` : "B";
+});
+window.addEventListener("birrometro-cloud-state", (event) => {
+  if (!event.detail?.drinks) return;
+  state.drinks = event.detail.drinks; state.imports = event.detail.imports || {};
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); render(); showToast("Datos sincronizados");
+});
+window.addEventListener("birrometro-auth-error", () => showToast("No se pudo iniciar sesión con Google"));
 if ("serviceWorker" in navigator && location.protocol !== "file:") {
   let refreshing = false;
   navigator.serviceWorker.addEventListener("controllerchange", () => {
