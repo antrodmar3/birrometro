@@ -23,7 +23,7 @@ También se puede abrir `index.html` directamente, aunque la instalación como P
 - Resumen de volumen en litros o mililitros para hoy, semana, mes y año.
 - Importación inicial única de 207 consumiciones aportadas por el usuario.
 - Distribución extrapolada de esa importación desde el 13 de enero de 2026, con horarios y mayor peso en viernes y sábados.
-- Navegación móvil inferior para Inicio, Formatos, Datos e Historial.
+- Navegación móvil inferior para Inicio, Formatos, Estadísticas, Historial, Mi perfil y Álbum.
 - Ranking de formatos con porcentajes, litros, barras y gráfico circular.
 - Panel de insights con favorito, día más activo, media semanal y evolución mensual.
 - Sistema visual renovado con Plus Jakarta Sans y Bricolage Grotesque.
@@ -33,6 +33,17 @@ También se puede abrir `index.html` directamente, aunque la instalación como P
 - Cálculo orientativo de unidades de alcohol: `ml × % vol. / 1000`.
 - Historial, borrado y exportación JSON.
 - Persistencia local y PWA instalable.
+- Álbum cerrado de 522 cervezas con nombre, país, bandera, tipo, graduación, fermentación y perfil de sabor.
+
+## Catálogo de cervezas
+
+La fuente maestra es `Cervezas.xlsx`. Para regenerar el archivo estático que consume la app después de actualizar el Excel:
+
+```powershell
+.\tools\generate-beer-catalog.ps1
+```
+
+El resultado se guarda en `beer-catalog.js`; no debe editarse manualmente.
 
 ## Publicación
 

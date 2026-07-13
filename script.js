@@ -1,4 +1,4 @@
-const CLOSED_BEER_CATALOG = [
+/* Catálogo anterior conservado únicamente para que el generador pueda reutilizar sus imágenes.
   {id:"Q610086",name:"Achel",country:"Bélgica",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Achellogo.png"},
   {id:"Q478119",name:"Amstel",country:"Países Bajos",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Amstel%20coaster.jpg"},
   {id:"Q3624753",name:"Asahi Super Dry",country:"Japón",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Asahi%20superdry%20japan.JPG"},
@@ -103,7 +103,8 @@ const CLOSED_BEER_CATALOG = [
   {id:"ci-caleya-goma2",name:"Caleya Goma 2",country:"España",style:"India Pale Ale",image:""},
   {id:"ci-spitfire",name:"Spitfire",country:"Reino Unido",style:"English Bitter",image:""},
   {id:"ci-bishops-finger",name:"Bishop's Finger",country:"Reino Unido",style:"English Bitter",image:""}
-];
+]; */
+const CLOSED_BEER_CATALOG = Array.isArray(window.BEER_CATALOG) ? window.BEER_CATALOG : [];
 const state = loadState();
 let activeUserId = null;
 let volumeUnit = "L";
@@ -111,7 +112,11 @@ const beerCatalog = CLOSED_BEER_CATALOG;
 let albumFilter = "all";
 const beerCatalogById = new Map(beerCatalog.map((beer) => [beer.id, beer]));
 function sanitizeAlbum(entries) {
-  return (Array.isArray(entries) ? entries : []).filter((entry) => beerCatalogById.has(entry.id)).map((entry) => ({...beerCatalogById.get(entry.id),markedAt:entry.markedAt || new Date().toISOString()}));
+  const catalogByName = new Map(beerCatalog.map((beer) => [`${beer.name}|${beer.country}`.toLocaleLowerCase("es"), beer]));
+  return (Array.isArray(entries) ? entries : []).map((entry) => {
+    const catalogBeer = beerCatalogById.get(entry.id) || catalogByName.get(`${entry.name || ""}|${entry.country || ""}`.toLocaleLowerCase("es"));
+    return catalogBeer ? {...catalogBeer, markedAt:entry.markedAt || new Date().toISOString()} : null;
+  }).filter(Boolean);
 }
 state.album = sanitizeAlbum(state.album);
 const $ = (selector) => document.querySelector(selector);
@@ -325,19 +330,32 @@ function countryFlag(country) {
   };
   return flags[country] || "🌍";
 }
+function beerFact(label, value) {
+  return value !== "" && value !== null && value !== undefined ? `<div><small>${label}</small><strong>${escapeHtml(String(value))}</strong></div>` : "";
+}
+function showBeerDetails(beer) {
+  const image = normalizeCommonsImage(beer.image);
+  const dialog = $("#beer-detail-dialog");
+  $("#beer-detail-media").innerHTML = image ? `<img src="${escapeHtml(image)}" alt="Imagen de ${escapeHtml(beer.name)}" referrerpolicy="no-referrer" />` : `<span>${escapeHtml(beer.name.trim().charAt(0).toUpperCase())}</span>`;
+  $("#beer-detail-name").textContent = beer.name;
+  $("#beer-detail-country").innerHTML = `<span aria-hidden="true">${beer.flag || countryFlag(beer.country)}</span>${escapeHtml(beer.country)}`;
+  $("#beer-detail-facts").innerHTML = [beerFact("Tipo", beer.style), beerFact("Alcohol", beer.abv !== null && beer.abv !== undefined ? `${beer.abv} % vol.` : ""), beerFact("Fermentación", beer.fermentation)].join("") || `<p class="beer-detail-missing">Sin ficha técnica disponible.</p>`;
+  $("#beer-detail-flavor").textContent = beer.flavor || "El catálogo original no incluye una nota de sabor para esta cerveza.";
+  dialog.showModal();
+}
 function renderBeerAlbum() {
   const catalogIds = new Set(beerCatalog.map((beer) => beer.id));
   const marked = new Map((state.album || []).filter((beer) => catalogIds.has(beer.id)).map((beer) => [beer.id, beer]));
   const term = ($("#beer-search")?.value || "").trim().toLocaleLowerCase("es");
   const visible = beerCatalog.filter((beer) => albumFilter !== "tried" || marked.has(beer.id))
-    .filter((beer) => !term || `${beer.name} ${beer.country} ${beer.style || ""}`.toLocaleLowerCase("es").includes(term))
+    .filter((beer) => !term || `${beer.name} ${beer.country} ${beer.style || ""} ${beer.fermentation || ""} ${beer.flavor || ""}`.toLocaleLowerCase("es").includes(term))
     .sort((a,b) => Number(marked.has(b.id)) - Number(marked.has(a.id)) || a.name.localeCompare(b.name,"es",{sensitivity:"base"}));
   $("#album-progress").textContent = `${marked.size} probadas`; $("#album-tried-count").textContent = marked.size;
   $("#album-catalog-count").textContent = beerCatalog.length || "—";
   $("#beer-album-grid").innerHTML = visible.map((beer) => {
     const tried = marked.has(beer.id); const image = normalizeCommonsImage(beer.image); const initial = beer.name.trim().charAt(0).toUpperCase();
     const fallback = `<span class="beer-card__fallback"${image ? " hidden" : ""}>${escapeHtml(initial)}</span>`;
-    return `<button class="beer-card${tried ? " is-tried" : ""}" type="button" data-beer-id="${beer.id}" aria-pressed="${tried}"><span class="beer-card__image">${image ? `<img src="${escapeHtml(image)}" alt="Imagen de ${escapeHtml(beer.name)}" loading="lazy" referrerpolicy="no-referrer" />` : ""}${fallback}</span><span class="beer-card__copy"><strong>${escapeHtml(beer.name)}</strong>${beer.style ? `<span class="beer-style">${escapeHtml(beer.style)}</span>` : ""}<small class="country-label"><span class="country-flag" aria-hidden="true">${countryFlag(beer.country)}</span><span class="country-name">${escapeHtml(beer.country)}</span></small></span><span class="beer-card__check" aria-hidden="true">${tried ? "✓" : "+"}</span></button>`;
+    return `<article class="beer-card${tried ? " is-tried" : ""}" data-beer-id="${beer.id}"><button class="beer-card__main" type="button" data-beer-details aria-label="Ver ficha de ${escapeHtml(beer.name)}"><span class="beer-card__image">${image ? `<img src="${escapeHtml(image)}" alt="Imagen de ${escapeHtml(beer.name)}" loading="lazy" referrerpolicy="no-referrer" />` : ""}${fallback}</span><span class="beer-card__copy"><strong>${escapeHtml(beer.name)}</strong><span class="beer-style">${escapeHtml(beer.style || "Tipo no indicado")}${beer.abv !== null && beer.abv !== undefined ? ` · ${escapeHtml(beer.abv)}%` : ""}</span><small class="country-label"><span class="country-flag" aria-hidden="true">${beer.flag || countryFlag(beer.country)}</span><span class="country-name">${escapeHtml(beer.country)}</span></small></span></button><button class="beer-card__check" type="button" data-album-toggle aria-pressed="${tried}" aria-label="${tried ? "Quitar" : "Añadir"} ${escapeHtml(beer.name)} ${tried ? "del" : "al"} álbum">${tried ? "✓" : "+"}</button></article>`;
   }).join("");
   $("#beer-album-grid").querySelectorAll("img").forEach((imageElement) => imageElement.addEventListener("error", () => {
     imageElement.hidden = true;
@@ -470,6 +488,8 @@ window.addEventListener("birrometro-auth-error", () => {
 $("#beer-album-grid").addEventListener("click", (event) => {
   const card = event.target.closest("[data-beer-id]"); if (!card) return;
   const beer = beerCatalog.find((item) => item.id === card.dataset.beerId) || state.album.find((item) => item.id === card.dataset.beerId); if (!beer) return;
+  if (event.target.closest("[data-beer-details]")) { showBeerDetails(beer); return; }
+  if (!event.target.closest("[data-album-toggle]")) return;
   const wasTried = state.album.some((item) => item.id === beer.id);
   state.album = wasTried ? state.album.filter((item) => item.id !== beer.id) : [...state.album, {...beer,markedAt:new Date().toISOString()}];
   save(); renderBeerAlbum(); showToast(wasTried ? `${beer.name} eliminada del álbum` : `${beer.name} añadida al álbum`);

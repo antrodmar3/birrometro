@@ -1,5 +1,5 @@
-const CACHE = "birrometro-v24";
-const ASSETS = ["./", "index.html", "styles.css?v=24", "script.js?v=24", "firebase-sync.js?v=24", "manifest.webmanifest", "icon.svg", "icon-192.png", "icon-512.png"];
+const CACHE = "birrometro-v25";
+const ASSETS = ["./", "index.html", "styles.css?v=25", "beer-catalog.js?v=25", "script.js?v=25", "firebase-sync.js?v=25", "manifest.webmanifest", "icon.svg", "icon-192.png", "icon-512.png"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(ASSETS)).then(() => self.skipWaiting()));
