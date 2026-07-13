@@ -283,10 +283,11 @@ input, select { display: block; width: 100%; margin-top: 7px; padding: 13px 14px
 .beer-card__image { height: 145px; display: grid; place-items: center; overflow: hidden; background: linear-gradient(145deg,#efede6,#faf8f1); }
 .beer-card__image img { width: 100%; height: 100%; object-fit: contain; padding: 12px; }
 .beer-card__fallback { font: 800 32px "Bricolage Grotesque"; color: #b5b1a5; }
-.beer-card__copy { display: block; min-height: 91px; padding: 12px; }
+.beer-card__copy { display: block; min-height: 108px; padding: 12px; }
 .beer-card__copy strong, .beer-card__copy small { display: block; overflow: hidden; text-overflow: ellipsis; }
 .beer-card__copy strong { font: 700 13px/1.2 "Bricolage Grotesque"; white-space: nowrap; }
-.beer-card__copy .country-label { width: fit-content; max-width: 100%; margin-top: 9px; padding: 5px 9px 5px 6px; display: flex; align-items: center; gap: 7px; overflow: visible; border: 1px solid var(--line); border-radius: 999px; background: var(--paper); color: var(--ink-soft); line-height: 1; }
+.beer-style { display: block; min-height: 11px; margin-top: 5px; overflow: hidden; color: var(--muted); font-size: 8px; font-weight: 600; line-height: 1.35; text-overflow: ellipsis; white-space: nowrap; }
+.beer-card__copy .country-label { width: fit-content; max-width: 100%; margin-top: 7px; padding: 5px 9px 5px 6px; display: flex; align-items: center; gap: 7px; overflow: visible; border: 1px solid var(--line); border-radius: 999px; background: var(--paper); color: var(--ink-soft); line-height: 1; }
 .country-flag { flex: 0 0 auto; font-size: 17px; line-height: 1; filter: drop-shadow(0 1px 1px rgba(23,24,18,.14)); }
 .country-name { min-width: 0; overflow: hidden; font-size: 10px; font-weight: 700; line-height: 1.2; text-overflow: ellipsis; white-space: nowrap; }
 .beer-card__check { position: absolute; top: 9px; right: 9px; display: grid; place-items: center; width: 31px; height: 31px; border: 2px solid white; border-radius: 11px; background: rgba(23,24,18,.78); color: white; font-size: 15px; box-shadow: 0 5px 12px rgba(0,0,0,.16); }

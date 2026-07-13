@@ -51,7 +51,58 @@ const CLOSED_BEER_CATALOG = [
   {id:"Q2388771",name:"Tripel Karmeliet",country:"Bélgica",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Tripel%20Karmeliet%20glas.jpg"},
   {id:"Q1071385",name:"Velkopopovický Kozel",country:"República Checa",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Velkopopovick%C3%BD%20Kozel%20logo.svg"},
   {id:"Q3390014",name:"Voll-Damm",country:"España",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Voll-DammBotella33cl.jpg"},
-  {id:"Q3503168",name:"Żywiec",country:"Polonia",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Zywiec%20Beer.JPG"}
+  {id:"Q3503168",name:"Żywiec",country:"Polonia",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Zywiec%20Beer.JPG"},
+  {id:"ci-erdinger-weissbier",name:"Erdinger Weissbier",country:"Alemania",style:"Weissbier",image:"https://upload.wikimedia.org/wikipedia/commons/5/5d/Erdinger.3.beers.JPG"},
+  {id:"ci-erdinger-dunkel",name:"Erdinger Dunkel",country:"Alemania",style:"Dunkel Weissbier",image:"https://upload.wikimedia.org/wikipedia/commons/5/5d/Erdinger.3.beers.JPG"},
+  {id:"ci-erdinger-pikantus",name:"Erdinger Pikantus",country:"Alemania",style:"Weizenbock",image:"https://upload.wikimedia.org/wikipedia/commons/5/5d/Erdinger.3.beers.JPG"},
+  {id:"ci-erdinger-urweisse",name:"Erdinger Urweisse",country:"Alemania",style:"Weissbier",image:"https://upload.wikimedia.org/wikipedia/commons/5/5d/Erdinger.3.beers.JPG"},
+  {id:"ci-straffe-hendrik",name:"Straffe Hendrik Quadrupel",country:"Bélgica",style:"Quadrupel",image:"https://upload.wikimedia.org/wikipedia/commons/2/20/Straffe_Hendrik.jpg"},
+  {id:"ci-oharas-stout",name:"O'Hara's Irish Stout",country:"Irlanda",style:"Irish Stout",image:""},
+  {id:"ci-oharas-red",name:"O'Hara's Irish Red",country:"Irlanda",style:"Irish Red Ale",image:""},
+  {id:"ci-brewdog-punk",name:"BrewDog Punk IPA",country:"Reino Unido",style:"India Pale Ale",image:"https://upload.wikimedia.org/wikipedia/commons/6/64/Crushed_Punk_IPA_cans.jpg"},
+  {id:"ci-weihenstephaner-vitus",name:"Weihenstephaner Vitus",country:"Alemania",style:"Weizenbock",image:"https://upload.wikimedia.org/wikipedia/commons/f/f6/2018-11-25_Weihenstephaner_beer_for_sale_in_Sydney%2C_Australia.jpg"},
+  {id:"ci-weihenstephaner-hefe",name:"Weihenstephaner Hefeweissbier",country:"Alemania",style:"Hefeweizen",image:"https://upload.wikimedia.org/wikipedia/commons/f/f6/2018-11-25_Weihenstephaner_beer_for_sale_in_Sydney%2C_Australia.jpg"},
+  {id:"ci-westmalle-dubbel",name:"Westmalle Dubbel",country:"Bélgica",style:"Trapense Dubbel",image:"https://upload.wikimedia.org/wikipedia/commons/a/af/Westmalle_beer_crates.JPG"},
+  {id:"ci-westmalle-tripel",name:"Westmalle Tripel",country:"Bélgica",style:"Trapense Tripel",image:"https://upload.wikimedia.org/wikipedia/commons/a/af/Westmalle_beer_crates.JPG"},
+  {id:"ci-chimay-blue",name:"Chimay Azul",country:"Bélgica",style:"Trapense Dark Ale",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Chimays.jpg"},
+  {id:"ci-chimay-white",name:"Chimay Blanca",country:"Bélgica",style:"Trapense Tripel",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Chimays.jpg"},
+  {id:"ci-chimay-red",name:"Chimay Roja",country:"Bélgica",style:"Trapense Dubbel",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Chimays.jpg"},
+  {id:"ci-st-bernardus-abt12",name:"St. Bernardus Abt 12",country:"Bélgica",style:"Quadrupel",image:""},
+  {id:"ci-samichlaus",name:"Samichlaus Classic",country:"Austria",style:"Doppelbock",image:"https://upload.wikimedia.org/wikipedia/commons/8/8d/Samichlaus_beer.2011.JPG"},
+  {id:"ci-piraat",name:"Piraat",country:"Bélgica",style:"Belgian Strong Ale",image:"https://upload.wikimedia.org/wikipedia/commons/5/5e/Piraat-bier1442.JPG"},
+  {id:"ci-budvar",name:"Budweiser Budvar Original",country:"República Checa",style:"Czech Lager",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Budweiser%20Budvar%20logo.svg"},
+  {id:"ci-orval",name:"Orval",country:"Bélgica",style:"Trapense Pale Ale",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Orval%20et%20son%20verre%20crop.jpg"},
+  {id:"ci-rochefort10",name:"Rochefort 10",country:"Bélgica",style:"Trapense Quadrupel",image:""},
+  {id:"ci-satan-red",name:"Satan Red",country:"Bélgica",style:"Belgian Strong Red Ale",image:""},
+  {id:"ci-delirium",name:"Delirium Tremens",country:"Bélgica",style:"Belgian Strong Golden Ale",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Bi%C3%A8re%20D%C3%A9lirium%20tremens.JPG"},
+  {id:"ci-dougalls-ipa4",name:"DouGall's IPA 4",country:"España",style:"India Pale Ale",image:""},
+  {id:"ci-dougalls-942",name:"DouGall's 942",country:"España",style:"American Pale Ale",image:""},
+  {id:"ci-dougalls-session-stout",name:"DouGall's Session Stout",country:"España",style:"Session Stout",image:""},
+  {id:"ci-lindemans-cassis",name:"Lindemans Cassis",country:"Bélgica",style:"Lambic de grosella",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Brouwerij%20Lindemans%204-05-2006%2012-11-37.jpg"},
+  {id:"ci-lindemans-framboise",name:"Lindemans Framboise",country:"Bélgica",style:"Lambic de frambuesa",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Brouwerij%20Lindemans%204-05-2006%2012-11-37.jpg"},
+  {id:"ci-lindemans-kriek",name:"Lindemans Kriek",country:"Bélgica",style:"Lambic de cereza",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Brouwerij%20Lindemans%204-05-2006%2012-11-37.jpg"},
+  {id:"ci-lindemans-pecheresse",name:"Lindemans Pêche",country:"Bélgica",style:"Lambic de melocotón",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Brouwerij%20Lindemans%204-05-2006%2012-11-37.jpg"},
+  {id:"ci-lindemans-apple",name:"Lindemans Apple",country:"Bélgica",style:"Lambic de manzana",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Brouwerij%20Lindemans%204-05-2006%2012-11-37.jpg"},
+  {id:"ci-ayinger-celebrator",name:"Ayinger Celebrator",country:"Alemania",style:"Doppelbock",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Privatbrauerei%20Aying.gif"},
+  {id:"ci-mahrs-ungespundet",name:"Mahrs Bräu Ungespundet",country:"Alemania",style:"Kellerbier",image:""},
+  {id:"ci-samuel-smith-imperial",name:"Samuel Smith Imperial Stout",country:"Reino Unido",style:"Imperial Stout",image:""},
+  {id:"ci-samuel-smith-porter",name:"Samuel Smith Taddy Porter",country:"Reino Unido",style:"English Porter",image:""},
+  {id:"ci-schlenkerla-eiche",name:"Schlenkerla Eiche",country:"Alemania",style:"Rauchbier Doppelbock",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Bamberg%20Schlenkerla-20160825-RM-102403.jpg"},
+  {id:"ci-schneider-eisbock",name:"Schneider Aventinus Eisbock",country:"Alemania",style:"Eisbock",image:""},
+  {id:"ci-schneider-hopfenweisse",name:"Schneider Hopfenweisse",country:"Alemania",style:"Weizen-Doppelbock",image:""},
+  {id:"ci-hobgoblin",name:"Wychwood Hobgoblin Ruby",country:"Reino Unido",style:"English Red Ale",image:""},
+  {id:"ci-la-chouffe-blonde",name:"La Chouffe Blonde",country:"Bélgica",style:"Belgian Strong Golden Ale",image:"https://commons.wikimedia.org/wiki/Special:FilePath/La%20Chouffe%20bottle.jpg"},
+  {id:"ci-houblon-chouffe",name:"Houblon Chouffe",country:"Bélgica",style:"Belgian IPA",image:"https://commons.wikimedia.org/wiki/Special:FilePath/La%20Chouffe%20bottle.jpg"},
+  {id:"ci-st-feuillien-noel",name:"St-Feuillien Cuvée de Noël",country:"Bélgica",style:"Belgian Strong Dark Ale",image:""},
+  {id:"ci-dulle-teve",name:"Dulle Teve",country:"Bélgica",style:"Tripel",image:"https://commons.wikimedia.org/wiki/Special:FilePath/De%20dolle%20brewery%20door.jpg"},
+  {id:"ci-oerbier",name:"Oerbier",country:"Bélgica",style:"Belgian Strong Dark Ale",image:"https://commons.wikimedia.org/wiki/Special:FilePath/De%20dolle%20brewery%20door.jpg"},
+  {id:"ci-saison-dupont",name:"Saison Dupont",country:"Bélgica",style:"Saison",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Saisonduponttweebio.jpg"},
+  {id:"ci-duchesse",name:"Duchesse de Bourgogne",country:"Bélgica",style:"Flanders Red Ale",image:"https://commons.wikimedia.org/wiki/Special:FilePath/Bier%20duchessedebourgogne.jpg"},
+  {id:"ci-basqueland-arraun",name:"Basqueland Arraun",country:"España",style:"India Pale Ale",image:""},
+  {id:"ci-basqueland-imparable",name:"Basqueland Imparable",country:"España",style:"India Pale Ale",image:""},
+  {id:"ci-caleya-goma2",name:"Caleya Goma 2",country:"España",style:"India Pale Ale",image:""},
+  {id:"ci-spitfire",name:"Spitfire",country:"Reino Unido",style:"English Bitter",image:""},
+  {id:"ci-bishops-finger",name:"Bishop's Finger",country:"Reino Unido",style:"English Bitter",image:""}
 ];
 const state = loadState();
 let activeUserId = null;
@@ -265,7 +316,7 @@ function normalizeCommonsImage(value) {
 }
 function countryFlag(country) {
   const flags = {
-    "Alemania":"🇩🇪", "Argentina":"🇦🇷", "Australia":"🇦🇺", "Bélgica":"🇧🇪", "Brasil":"🇧🇷",
+    "Alemania":"🇩🇪", "Argentina":"🇦🇷", "Australia":"🇦🇺", "Austria":"🇦🇹", "Bélgica":"🇧🇪", "Brasil":"🇧🇷",
     "Bulgaria":"🇧🇬", "España":"🇪🇸", "Estados Unidos":"🇺🇸", "Finlandia":"🇫🇮", "Francia":"🇫🇷",
     "India":"🇮🇳", "Indonesia":"🇮🇩", "Irlanda":"🇮🇪", "Italia":"🇮🇹", "Jamaica":"🇯🇲",
     "Japón":"🇯🇵", "México":"🇲🇽", "Países Bajos":"🇳🇱", "Perú":"🇵🇪", "Polonia":"🇵🇱",
@@ -279,14 +330,20 @@ function renderBeerAlbum() {
   const marked = new Map((state.album || []).filter((beer) => catalogIds.has(beer.id)).map((beer) => [beer.id, beer]));
   const term = ($("#beer-search")?.value || "").trim().toLocaleLowerCase("es");
   const visible = beerCatalog.filter((beer) => albumFilter !== "tried" || marked.has(beer.id))
-    .filter((beer) => !term || `${beer.name} ${beer.country}`.toLocaleLowerCase("es").includes(term))
+    .filter((beer) => !term || `${beer.name} ${beer.country} ${beer.style || ""}`.toLocaleLowerCase("es").includes(term))
     .sort((a,b) => Number(marked.has(b.id)) - Number(marked.has(a.id)) || a.name.localeCompare(b.name,"es",{sensitivity:"base"}));
   $("#album-progress").textContent = `${marked.size} probadas`; $("#album-tried-count").textContent = marked.size;
   $("#album-catalog-count").textContent = beerCatalog.length || "—";
   $("#beer-album-grid").innerHTML = visible.map((beer) => {
     const tried = marked.has(beer.id); const image = normalizeCommonsImage(beer.image); const initial = beer.name.trim().charAt(0).toUpperCase();
-    return `<button class="beer-card${tried ? " is-tried" : ""}" type="button" data-beer-id="${beer.id}" aria-pressed="${tried}"><span class="beer-card__image">${image ? `<img src="${escapeHtml(image)}" alt="Logo de ${escapeHtml(beer.name)}" loading="lazy" referrerpolicy="no-referrer" />` : `<span class="beer-card__fallback">${escapeHtml(initial)}</span>`}</span><span class="beer-card__copy"><strong>${escapeHtml(beer.name)}</strong><small class="country-label"><span class="country-flag" aria-hidden="true">${countryFlag(beer.country)}</span><span class="country-name">${escapeHtml(beer.country)}</span></small></span><span class="beer-card__check" aria-hidden="true">${tried ? "✓" : "+"}</span></button>`;
+    const fallback = `<span class="beer-card__fallback"${image ? " hidden" : ""}>${escapeHtml(initial)}</span>`;
+    return `<button class="beer-card${tried ? " is-tried" : ""}" type="button" data-beer-id="${beer.id}" aria-pressed="${tried}"><span class="beer-card__image">${image ? `<img src="${escapeHtml(image)}" alt="Imagen de ${escapeHtml(beer.name)}" loading="lazy" referrerpolicy="no-referrer" />` : ""}${fallback}</span><span class="beer-card__copy"><strong>${escapeHtml(beer.name)}</strong>${beer.style ? `<span class="beer-style">${escapeHtml(beer.style)}</span>` : ""}<small class="country-label"><span class="country-flag" aria-hidden="true">${countryFlag(beer.country)}</span><span class="country-name">${escapeHtml(beer.country)}</span></small></span><span class="beer-card__check" aria-hidden="true">${tried ? "✓" : "+"}</span></button>`;
   }).join("");
+  $("#beer-album-grid").querySelectorAll("img").forEach((imageElement) => imageElement.addEventListener("error", () => {
+    imageElement.hidden = true;
+    const fallbackElement = imageElement.nextElementSibling;
+    if (fallbackElement) fallbackElement.hidden = false;
+  }, {once:true}));
   $("#album-empty").hidden = visible.length > 0;
 }
 function render() {
