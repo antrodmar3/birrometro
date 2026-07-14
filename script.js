@@ -112,9 +112,11 @@ const beerCatalog = CLOSED_BEER_CATALOG;
 let albumFilter = "all";
 let pendingLocation = null;
 let locationRequest = Promise.resolve(null);
+let locationCaptureSequence = 0;
 let beerMap = null;
 let beerHeatLayer = null;
 let beerPointLayer = null;
+let beerMapResizeObserver = null;
 let beerMapSignature = "";
 const mapDisabledFormats = new Set();
 const FORMAT_ICON_PATHS = Object.freeze({
@@ -456,16 +458,16 @@ function renderBeerAlbum() {
   }, {once:true}));
   $("#album-empty").hidden = visible.length > 0;
 }
-function periodLocatedDrinks() {
+function drinksForLocationPeriod() {
   const period = $("#location-period")?.value || "all"; const now = new Date();
   return state.drinks.filter((drink) => {
-    if (!sanitizeLocation(drink.location)) return false;
     const date = new Date(drink.date); if (Number.isNaN(date.getTime())) return false;
     if (period === "year") return date.getFullYear() === now.getFullYear();
     if (period === "month") return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth();
     return true;
   });
 }
+function periodLocatedDrinks() { return drinksForLocationPeriod().filter((drink) => sanitizeLocation(drink.location)); }
 function locatedDrinksForPeriod() { return periodLocatedDrinks().filter((drink) => !mapDisabledFormats.has(drink.type)); }
 function renderMapFormatFilters() {
   const types = Object.keys(FORMAT_ICON_PATHS).sort((a,b) => a.localeCompare(b,"es",{sensitivity:"base"}));
@@ -476,7 +478,7 @@ function renderMapFormatFilters() {
   $("#map-filter-count").textContent = `${types.length - mapDisabledFormats.size}/${types.length}`;
 }
 function locationZoneKey(location) { return `${location.latitude.toFixed(3)}|${location.longitude.toFixed(3)}`; }
-function renderLocationStats(located) {
+function renderLocationStats(located, allLocated = periodLocatedDrinks()) {
   const zones = new Map();
   located.forEach((drink) => {
     const location = sanitizeLocation(drink.location); const key = locationZoneKey(location);
@@ -490,16 +492,38 @@ function renderLocationStats(located) {
   $("#map-drink-count").textContent = located.length;
   $("#map-favorite-place").textContent = favorite ? favoriteName || "Zona habitual" : "—";
   $("#map-favorite-place").title = favoriteName || "";
+  const periodTotal = drinksForLocationPeriod().length;
+  $("#map-location-coverage").textContent = `${allLocated.length} de ${periodTotal} con ubicación`;
 }
 function ensureBeerMap() {
-  if (beerMap || !window.L || typeof window.L.heatLayer !== "function" || !$("#beer-map")) return Boolean(beerMap);
-  beerMap = L.map("beer-map", {scrollWheelZoom:true, zoomControl:true, tap:true}).setView([40.2,-3.7], 5);
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {maxZoom:19, attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'}).addTo(beerMap);
+  const container = $("#beer-map");
+  if (beerMap || !window.L || typeof window.L.heatLayer !== "function" || !container) return Boolean(beerMap);
+  if (container.clientWidth < 10 || container.clientHeight < 10) return false;
+  beerMap = L.map(container, {
+    boxZoom:true, doubleClickZoom:true, dragging:true, keyboard:true,
+    scrollWheelZoom:true, touchZoom:true, zoomControl:true, tap:false
+  }).setView([40.2,-3.7], 5);
+  const tileLayer = L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
+    maxZoom:20, subdomains:"abcd", keepBuffer:4, updateWhenIdle:false,
+    attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+  }).addTo(beerMap);
+  tileLayer.on("tileerror", ({tile,coords}) => {
+    if (!tile || tile.dataset.fallbackSource) return;
+    tile.dataset.fallbackSource = "openstreetmap";
+    tile.src = `https://tile.openstreetmap.org/${coords.z}/${coords.x}/${coords.y}.png`;
+  });
   beerHeatLayer = L.heatLayer([], {radius:30, blur:23, maxZoom:17, minOpacity:.36, gradient:{.25:"#ffd36e",.5:"#ffb21a",.72:"#ff6b35",1:"#a84f40"}}).addTo(beerMap);
   beerPointLayer = L.layerGroup().addTo(beerMap);
   L.DomEvent.disableClickPropagation($("#map-tools"));
   L.DomEvent.disableScrollPropagation($("#map-tools"));
   beerMap.on("click", () => { $("#map-filter-panel").hidden = true; $("#map-filter-toggle").setAttribute("aria-expanded","false"); });
+  if ("ResizeObserver" in window) {
+    beerMapResizeObserver = new ResizeObserver(() => {
+      if (!beerMap || container.clientWidth < 10 || container.clientHeight < 10) return;
+      requestAnimationFrame(() => beerMap?.invalidateSize({animate:false,pan:false}));
+    });
+    beerMapResizeObserver.observe(container);
+  }
   return true;
 }
 function beerMapMarkerIcon(type) {
@@ -517,17 +541,23 @@ function spreadMarkerCoordinates(location, occurrences) {
 function renderLocationMap({fit=true} = {}) {
   renderMapFormatFilters();
   const allLocated = periodLocatedDrinks();
-  const located = locatedDrinksForPeriod(); renderLocationStats(located);
+  const located = locatedDrinksForPeriod(); renderLocationStats(located, allLocated);
   const empty = $("#map-empty");
+  if (appShell?.dataset.view !== "perfil") return;
   if (!window.L || typeof window.L.heatLayer !== "function") {
     empty.hidden = false;
     empty.querySelector("strong").textContent = "No se pudo cargar el mapa";
     empty.querySelector("small").textContent = "Comprueba la conexión e inténtalo de nuevo.";
     return;
   }
-  if (!ensureBeerMap()) return;
-  if (appShell?.dataset.view !== "perfil") return;
-  beerMap.invalidateSize();
+  if (!ensureBeerMap()) {
+    requestAnimationFrame(() => {
+      if (appShell?.dataset.view === "perfil" && ensureBeerMap()) renderLocationMap({fit});
+    });
+    return;
+  }
+  beerMap.invalidateSize({animate:false,pan:false});
+  requestAnimationFrame(() => beerMap?.invalidateSize({animate:false,pan:false}));
   const points = located.map((drink) => { const location = sanitizeLocation(drink.location); return [location.latitude,location.longitude,1]; });
   beerHeatLayer.setLatLngs(points); beerPointLayer.clearLayers();
   const occurrences = new Map();
@@ -540,7 +570,7 @@ function renderLocationMap({fit=true} = {}) {
   empty.hidden = located.length > 0;
   if (!located.length) {
     empty.querySelector("strong").textContent = allLocated.length ? "No hay formatos seleccionados" : "Aún no hay ubicaciones";
-    empty.querySelector("small").textContent = allLocated.length ? "Abre el filtro y activa al menos un tipo de cerveza." : "La ubicación se añadirá automáticamente a tus próximas birras cuando hayas permitido el acceso.";
+    empty.querySelector("small").textContent = allLocated.length ? "Abre el filtro y activa al menos un tipo de cerveza." : "Puedes seguir moviendo el mapa. Las cervezas antiguas sin coordenadas no se pueden situar; las nuevas aparecerán al permitir la ubicación.";
     return;
   }
   const signature = `${$("#location-period").value}|${[...mapDisabledFormats].sort().join(",")}|${located.map((drink) => `${drink.id}:${drink.location?.latitude}:${drink.location?.longitude}`).join("|")}`;
@@ -586,20 +616,34 @@ function render() {
 function escapeHtml(value) { const node = document.createElement("span"); node.textContent = value; return node.innerHTML; }
 
 function beginAutomaticLocationCapture() {
+  const captureSequence = ++locationCaptureSequence;
   pendingLocation = null;
   $("#add-dialog-copy").textContent = "Obteniendo automáticamente el día, la hora y la ubicación…";
   if (!navigator.geolocation) {
     $("#add-dialog-copy").textContent = "Guardaremos el día y la hora; la ubicación no está disponible.";
     locationRequest = Promise.resolve(null); return locationRequest;
   }
-  locationRequest = new Promise((resolve) => navigator.geolocation.getCurrentPosition((position) => {
-    pendingLocation = sanitizeLocation({latitude:position.coords.latitude,longitude:position.coords.longitude,accuracy:position.coords.accuracy});
-    $("#add-dialog-copy").textContent = "Día, hora y ubicación preparados automáticamente.";
-    resolve(pendingLocation);
-  }, () => {
-    $("#add-dialog-copy").textContent = "Guardaremos el día y la hora; la ubicación no está disponible.";
-    resolve(null);
-  }, {enableHighAccuracy:true,timeout:6500,maximumAge:300000}));
+  locationRequest = new Promise((resolve) => {
+    const onSuccess = (position) => {
+      const location = sanitizeLocation({latitude:position.coords.latitude,longitude:position.coords.longitude,accuracy:position.coords.accuracy});
+      if (captureSequence === locationCaptureSequence) {
+        pendingLocation = location;
+        $("#add-dialog-copy").textContent = `Día, hora y ubicación preparados automáticamente${location?.accuracy ? ` · precisión aproximada ${location.accuracy} m` : ""}.`;
+      }
+      resolve(location);
+    };
+    const onError = (error) => {
+      if (captureSequence === locationCaptureSequence) {
+        $("#add-dialog-copy").textContent = error?.code === 1
+          ? "La ubicación está bloqueada. Actívala para Birrómetro en los permisos del navegador."
+          : "No hemos podido obtener la ubicación. Guardaremos el día y la hora.";
+      }
+      resolve(null);
+    };
+    try {
+      navigator.geolocation.getCurrentPosition(onSuccess, onError, {enableHighAccuracy:true,timeout:12000,maximumAge:600000});
+    } catch (error) { onError(error); }
+  });
   return locationRequest;
 }
 $("#open-add").addEventListener("click", () => { els.addDialog.showModal(); beginAutomaticLocationCapture(); });
@@ -615,7 +659,7 @@ document.querySelectorAll(".size-option").forEach((button) => button.addEventLis
   state.drinks.push(addedDrink);
   if (navigator.vibrate) navigator.vibrate(18);
   save(); render(); els.addDialog.close(); options.classList.remove("is-locating");
-  showToast(`${button.dataset.type} añadida · ${new Intl.DateTimeFormat("es-ES", {hour:"2-digit", minute:"2-digit"}).format(addedAt)}${location ? " · ubicación guardada" : ""}`);
+  showToast(`${button.dataset.type} añadida · ${new Intl.DateTimeFormat("es-ES", {hour:"2-digit", minute:"2-digit"}).format(addedAt)}${location ? " · ubicación guardada" : " · sin ubicación"}`);
   maybeShowDriverAlert(addedDrink);
 }));
 $("#open-late").addEventListener("click", () => { els.moreDialog.close(); $("#late-date").value = localDateTime(); els.lateDialog.showModal(); });

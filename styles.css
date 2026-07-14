@@ -325,8 +325,8 @@ input, select { display: block; width: 100%; margin-top: 7px; padding: 13px 14px
 .location-head h3 { margin: 0; font: 800 25px/1 "Bricolage Grotesque"; letter-spacing: -.045em; }
 .location-live { display: inline-flex; align-items: center; gap: 6px; padding: 7px 10px; border-radius: 999px; background: #e8f2eb; color: var(--green); font-size: 8px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
 .location-live i { width: 7px; height: 7px; border-radius: 50%; background: #3d9a63; box-shadow: 0 0 0 4px rgba(61,154,99,.12); }
-.beer-map { position: relative; z-index: 0; width: 100%; height: 410px; overflow: hidden; border: 1px solid #d8d7cf; border-radius: 20px; background: #e8e4d7; }
-.map-tools { position: absolute; z-index: 1100; top: 12px; right: 12px; }
+.beer-map { position: relative; z-index: 0; isolation: isolate; width: 100%; height: 410px; overflow: hidden; border: 1px solid #d8d7cf; border-radius: 20px; background: #e8e4d7; touch-action: none; }
+.map-tools { position: absolute; z-index: 1100; top: 12px; right: 12px; touch-action: auto; }
 .map-filter-toggle { min-height: 42px; padding: 7px 8px 7px 11px; display: flex; align-items: center; gap: 7px; border: 1px solid rgba(23,24,18,.12); border-radius: 13px; background: rgba(255,254,250,.96); color: var(--ink); box-shadow: 0 8px 22px rgba(23,24,18,.14); backdrop-filter: blur(10px); cursor: pointer; }
 .map-filter-toggle svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; }
 .map-filter-toggle span { font-size: 10px; font-weight: 800; }
@@ -363,18 +363,20 @@ input, select { display: block; width: 100%; margin-top: 7px; padding: 13px 14px
 .map-popup-head img { width: 45px; height: 45px; border-radius: 11px; object-fit: cover; }
 .map-popup-head small { display: block; margin-top: 3px; color: var(--muted); font-size: 8px; }
 .beer-map .leaflet-popup-content p { margin: 8px 0 0; color: var(--muted); font-size: 8px; }
-.map-empty { position: absolute; z-index: 1001; inset: 0; display: grid; place-content: center; justify-items: center; padding: 35px; background: radial-gradient(circle at 50% 35%, #fff8e6, rgba(232,228,215,.94) 58%); text-align: center; }
-.map-empty > span { display: grid; place-items: center; width: 58px; height: 58px; padding: 5px; border-radius: 18px; background: var(--ink); box-shadow: 0 12px 25px rgba(23,24,18,.2); transform: rotate(-4deg); }
+.map-empty { position: absolute; z-index: 1001; left: 50%; top: 50%; width: min(310px, calc(100% - 36px)); display: grid; place-content: center; justify-items: center; padding: 20px; border: 1px solid rgba(23,24,18,.1); border-radius: 20px; background: rgba(255,254,250,.94); box-shadow: 0 14px 38px rgba(23,24,18,.16); backdrop-filter: blur(12px); pointer-events: none; text-align: center; transform: translate(-50%,-50%); }
+.map-empty > span { display: grid; place-items: center; width: 48px; height: 48px; padding: 4px; border-radius: 15px; background: var(--ink); box-shadow: 0 10px 22px rgba(23,24,18,.18); transform: rotate(-4deg); }
 .map-empty img { width: 100%; height: 100%; }
-.map-empty strong { margin-top: 15px; font: 800 16px "Bricolage Grotesque"; }
+.map-empty strong { margin-top: 12px; font: 800 16px "Bricolage Grotesque"; }
 .map-empty small { max-width: 270px; margin-top: 5px; color: var(--muted); font-size: 9px; line-height: 1.5; }
 .location-stats { margin-top: 10px; display: grid; grid-template-columns: repeat(3,1fr); gap: 9px; }
 .location-stats article { min-width: 0; padding: 13px 8px; border-radius: 14px; background: var(--paper); text-align: center; }
 .location-stats strong, .location-stats small { display: block; }
 .location-stats strong { overflow: hidden; font: 800 17px "Bricolage Grotesque"; text-overflow: ellipsis; white-space: nowrap; }
 .location-stats small { margin-top: 3px; color: var(--muted); font-size: 8px; }
-.location-privacy { margin: 14px 2px 0; display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 8px; line-height: 1.45; }
+.location-privacy { margin: 14px 2px 0; display: flex; align-items: center; justify-content: space-between; gap: 10px; color: var(--muted); font-size: 8px; line-height: 1.45; }
+.location-privacy__copy { display: flex; align-items: center; gap: 7px; }
 .location-privacy svg { flex: 0 0 auto; width: 17px; height: 17px; fill: none; stroke: var(--green); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.location-coverage { flex: 0 0 auto; padding: 7px 9px; border-radius: 999px; background: #eef1e9; color: var(--green); font-size: 7px; white-space: nowrap; }
 .confirm-dialog { width: min(470px, calc(100% - 28px)); padding: 0; border: 0; border-radius: 28px; background: var(--card); color: var(--ink); box-shadow: 0 30px 80px rgba(23,24,18,.3); }
 .confirm-dialog::backdrop { background: rgba(13,14,11,.6); backdrop-filter: blur(7px); }
 .confirm-panel { padding: 30px; text-align: center; }
@@ -521,6 +523,8 @@ input, select { display: block; width: 100%; margin-top: 7px; padding: 13px 14px
   .map-tools { top: 9px; right: 9px; }
   .map-filter-panel { width: min(320px, calc(100vw - 54px)); max-height: 320px; }
   .location-stats strong { font-size: 15px; }
+  .location-privacy { align-items: flex-start; flex-direction: column; }
+  .location-coverage { margin-left: 24px; }
   .confirm-panel { padding: 26px 20px; }
   .confirm-actions { grid-template-columns: 1fr; }
   .bottom-nav { bottom: max(14px, env(safe-area-inset-bottom)); }

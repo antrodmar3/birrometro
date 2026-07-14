@@ -15,8 +15,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="assets/vendor/leaflet.css?v=33" />
-    <link rel="stylesheet" href="styles.css?v=33" />
+    <link rel="stylesheet" href="assets/vendor/leaflet.css?v=34" />
+    <link rel="stylesheet" href="styles.css?v=34" />
   </head>
   <body>
     <div class="app-shell" data-view="home" data-auth="pending">
@@ -199,7 +199,7 @@
               <div class="map-empty" id="map-empty"><span aria-hidden="true"><img src="icon.svg" alt="" /></span><strong>Aún no hay ubicaciones</strong><small>La ubicación se añadirá automáticamente a tus próximas birras cuando hayas permitido el acceso.</small></div>
             </div>
             <div class="location-stats"><article><strong id="map-location-count">0</strong><small>Zonas</small></article><article><strong id="map-favorite-place">—</strong><small>Más visitada</small></article><article><strong id="map-drink-count">0</strong><small>Birras mapeadas</small></article></div>
-            <p class="location-privacy"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>La ubicación se captura automáticamente al registrar y se sincroniza de forma privada con tu cuenta.</p>
+            <p class="location-privacy"><span class="location-privacy__copy"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>La ubicación se captura automáticamente al registrar y se sincroniza de forma privada con tu cuenta.</span><strong class="location-coverage" id="map-location-coverage">0 de 0 con ubicación</strong></p>
           </div>
         </section>
 
@@ -317,10 +317,10 @@
     </dialog>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script src="assets/vendor/leaflet.js?v=33"></script>
-    <script src="assets/vendor/leaflet-heat.js?v=33"></script>
-    <script src="beer-catalog.js?v=33"></script>
-    <script type="module" src="firebase-sync.js?v=33"></script>
-    <script src="script.js?v=33"></script>
+    <script src="assets/vendor/leaflet.js?v=34"></script>
+    <script src="assets/vendor/leaflet-heat.js?v=34"></script>
+    <script src="beer-catalog.js?v=34"></script>
+    <script type="module" src="firebase-sync.js?v=34"></script>
+    <script src="script.js?v=34"></script>
   </body>
 </html>
