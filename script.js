@@ -541,7 +541,8 @@ function spreadMarkerCoordinates(location, occurrences) {
 function renderLocationMap({fit=true} = {}) {
   renderMapFormatFilters();
   const allLocated = periodLocatedDrinks();
-  const located = locatedDrinksForPeriod(); renderLocationStats(located, allLocated);
+  const heatOnly = mapDisabledFormats.size === Object.keys(FORMAT_ICON_PATHS).length;
+  const located = heatOnly ? allLocated : locatedDrinksForPeriod(); renderLocationStats(located, allLocated);
   const empty = $("#map-empty");
   if (appShell?.dataset.view !== "perfil") return;
   if (!window.L || typeof window.L.heatLayer !== "function") {
@@ -561,7 +562,7 @@ function renderLocationMap({fit=true} = {}) {
   const points = located.map((drink) => { const location = sanitizeLocation(drink.location); return [location.latitude,location.longitude,1]; });
   beerHeatLayer.setLatLngs(points); beerPointLayer.clearLayers();
   const occurrences = new Map();
-  located.forEach((drink) => {
+  if (!heatOnly) located.forEach((drink) => {
     const location = sanitizeLocation(drink.location); const date = new Date(drink.date);
     const title = location.name || "Punto registrado"; const source = FORMAT_ICON_PATHS[drink.type] || "icon.svg";
     const detail = `<div class="map-popup-head"><img src="${source}" alt="" /><div><strong>${escapeHtml(drink.type)}</strong><small>${drink.volume} ml · ${escapeHtml(title)}</small></div></div><p>${new Intl.DateTimeFormat("es-ES",{day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"}).format(date)}</p>`;
