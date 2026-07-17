@@ -338,6 +338,27 @@ function getFormatStats() {
   });
   return [...stats.values()].sort((a,b) => b.count - a.count || a.type.localeCompare(b.type, "es", {sensitivity:"base"}));
 }
+function allocateFormatPercentages(formats, total) {
+  if (!formats.length || !total) return new Map();
+  const allocations = formats.map((format) => {
+    const exact = format.count / total * 100;
+    return {
+      type:format.type,
+      percent:Math.floor(exact),
+      remainder:exact - Math.floor(exact),
+      unitVolume:format.count ? format.volume / format.count : 0
+    };
+  });
+  let pointsLeft = 100 - allocations.reduce((sum, allocation) => sum + allocation.percent, 0);
+  const priority = [...allocations].sort((a,b) => {
+    const remainderDifference = b.remainder - a.remainder;
+    if (Math.abs(remainderDifference) > 1e-9) return remainderDifference;
+    if (b.unitVolume !== a.unitVolume) return b.unitVolume - a.unitVolume;
+    return a.type.localeCompare(b.type, "es", {sensitivity:"base"});
+  });
+  for (let index = 0; index < pointsLeft; index += 1) priority[index % priority.length].percent += 1;
+  return new Map(allocations.map((allocation) => [allocation.type, allocation.percent]));
+}
 function reorderFormatOptions() {
   const counts = new Map();
   state.drinks.forEach((drink) => counts.set(drink.type, (counts.get(drink.type) || 0) + 1));
@@ -348,15 +369,16 @@ function reorderFormatOptions() {
 }
 function renderFormatStats() {
   const formats = getFormatStats(); const total = state.drinks.length || 1;
+  const percentages = allocateFormatPercentages(formats, state.drinks.length);
   $("#formats-total").textContent = `${state.drinks.length} en total`;
-  const favorite = formats[0]; const favoritePercent = favorite ? Math.round(favorite.count / total * 100) : 0;
+  const favorite = formats[0]; const favoritePercent = favorite ? percentages.get(favorite.type) : 0;
   $("#favorite-percent").textContent = `${favoritePercent}%`; $("#favorite-format").textContent = favorite?.type || "Sin datos";
   $("#insight-favorite").textContent = favorite?.type || "—";
   let cursor = 0;
   const svg = $("#format-donut svg");
   svg.innerHTML = `<circle class="donut-track" cx="60" cy="60" r="48" pathLength="100"></circle>` + formats.map((format,index) => {
-    const share = format.count / total * 100; const offset = -cursor; cursor += share;
-    return `<circle class="donut-segment" cx="60" cy="60" r="48" pathLength="100" tabindex="0" role="button" aria-label="${escapeHtml(format.type)}: ${format.count}, ${Math.round(share)}%" data-format="${escapeHtml(format.type)}" data-count="${format.count}" data-percent="${Math.round(share)}" style="--segment-color:${FORMAT_COLORS[index % FORMAT_COLORS.length]};stroke-dasharray:${share} ${100-share};stroke-dashoffset:${offset}"></circle>`;
+    const share = format.count / total * 100; const percent = percentages.get(format.type); const offset = -cursor; cursor += share;
+    return `<circle class="donut-segment" cx="60" cy="60" r="48" pathLength="100" tabindex="0" role="button" aria-label="${escapeHtml(format.type)}: ${format.count}, ${percent}%" data-format="${escapeHtml(format.type)}" data-count="${format.count}" data-percent="${percent}" style="--segment-color:${FORMAT_COLORS[index % FORMAT_COLORS.length]};stroke-dasharray:${share} ${100-share};stroke-dashoffset:${offset}"></circle>`;
   }).join("");
   const centerLabel = $("#format-donut small"); const tooltip = $("#donut-tooltip"); let donutPinned = false;
   const resetDonut = () => { $("#favorite-percent").textContent = `${favoritePercent}%`; centerLabel.textContent = "favorito"; tooltip.textContent = "Toca un segmento para identificarlo"; };
@@ -368,7 +390,7 @@ function renderFormatStats() {
     segment.addEventListener("blur", () => { if (!donutPinned) resetDonut(); });
   });
   $("#format-ranking").innerHTML = formats.map((format,index) => {
-    const percent = Math.round(format.count / total * 100); const liters = (format.volume / 1000).toLocaleString("es-ES",{maximumFractionDigits:1});
+    const percent = percentages.get(format.type); const liters = (format.volume / 1000).toLocaleString("es-ES",{maximumFractionDigits:1});
     return `<article class="format-row"><span class="format-color" style="--format-color:${FORMAT_COLORS[index % FORMAT_COLORS.length]}">${index + 1}</span><div><div class="format-row__head"><strong>${escapeHtml(format.type)}</strong><span>${format.count} · ${liters} L</span></div><div class="format-bar"><i style="width:${percent}%;--format-color:${FORMAT_COLORS[index % FORMAT_COLORS.length]}"></i></div></div><b>${percent}%</b></article>`;
   }).join("");
 }
