@@ -15,8 +15,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="assets/vendor/leaflet.css?v=36" />
-    <link rel="stylesheet" href="styles.css?v=36" />
+    <link rel="stylesheet" href="assets/vendor/leaflet.css?v=37" />
+    <link rel="stylesheet" href="styles.css?v=37" />
   </head>
   <body>
     <div class="app-shell" data-view="home" data-auth="pending">
@@ -143,14 +143,6 @@
           </div>
         </section>
 
-        <section class="history-section standalone-view" id="historial" aria-labelledby="history-title">
-          <div class="section-title"><div><p class="eyebrow">Últimos registros</p><h2 id="history-title">Historial</h2></div></div>
-          <div class="empty-state" id="empty-state">
-            <span>○</span><p>Aún no hay cervezas registradas.<br />La primera aparecerá aquí.</p>
-          </div>
-          <ul class="history-list" id="history-list"></ul>
-        </section>
-
         <section class="profile-section standalone-view" id="perfil" aria-labelledby="profile-title">
           <div class="section-title"><div><p class="eyebrow">Tu cuenta</p><h2 id="profile-title">Mi perfil</h2></div><span class="section-badge" id="profile-sync">Sin conectar</span></div>
           <div class="profile-card">
@@ -162,6 +154,28 @@
               <article><span class="profile-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3S6.5 9.2 6.5 14.2a5.5 5.5 0 0 0 11 0C17.5 9.2 12 3 12 3Z"/><path d="M9.5 15.5c.4 1.2 1.3 1.8 2.5 2"/></svg></span><small>Volumen</small><strong id="profile-liters">0 L</strong><em>consumido</em></article>
               <article><span class="profile-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-2.9-5.6 2.9 1.1-6.2L3 9.6l6.2-.9L12 3Z"/></svg></span><small>Favorita</small><strong id="profile-favorite">—</strong><em>formato habitual</em></article>
             </div>
+          </div>
+          <div class="profile-folds">
+            <details class="profile-fold" id="historial">
+              <summary><span class="profile-fold__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 6h12M8 12h12M8 18h12"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg></span><span><small>Últimos registros</small><strong id="history-title">Historial</strong></span><b aria-hidden="true"></b></summary>
+              <div class="profile-fold__body history-section" aria-labelledby="history-title">
+                <div class="empty-state" id="empty-state"><span>○</span><p>Aún no hay cervezas registradas.<br />La primera aparecerá aquí.</p></div>
+                <ul class="history-list" id="history-list"></ul>
+              </div>
+            </details>
+            <details class="profile-fold" id="album">
+              <summary><span class="profile-fold__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 4h12a2 2 0 0 1 2 2v14H7a2 2 0 0 1-2-2V4Z"/><path d="M8 4v16M11 9h5M11 13h4"/></svg></span><span><small>Tu colección</small><strong id="album-title">Álbum de cervezas</strong></span><em class="section-badge" id="album-progress">0 probadas</em><b aria-hidden="true"></b></summary>
+              <div class="profile-fold__body album-section" aria-labelledby="album-title">
+                <div class="album-toolbar">
+                  <label class="album-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.2 4.2"/></svg><input id="beer-search" type="search" autocomplete="off" placeholder="Nombre, país, tipo o sabor…" aria-label="Buscar cerveza" /></label>
+                  <div class="album-filters" role="group" aria-label="Filtrar álbum"><button class="is-active" type="button" data-album-filter="all">Catálogo</button><button type="button" data-album-filter="tried">Probadas</button></div>
+                </div>
+                <div class="album-summary"><div><strong id="album-tried-count">0</strong><small>Probadas</small></div><div><strong id="album-catalog-count">—</strong><small>En catálogo</small></div></div>
+                <div class="beer-album-grid" id="beer-album-grid" aria-live="polite"></div>
+                <div class="album-empty" id="album-empty" hidden><span>⌕</span><strong>No encontramos esa cerveza</strong><small>Prueba con la marca, el país o una parte del nombre.</small></div>
+                <p class="album-attribution">Catálogo cerrado generado desde la base de datos proporcionada. Fotografías verificadas en <a href="https://commons.wikimedia.org/" target="_blank" rel="noreferrer">Wikimedia Commons</a>; cuando no existe una coincidencia fiable se utiliza una ilustración propia. Banderas de <a href="https://github.com/jdecked/twemoji" target="_blank" rel="noreferrer">Twemoji</a>.</p>
+              </div>
+            </details>
           </div>
           <section class="groups-card" aria-labelledby="groups-title">
             <div class="groups-head">
@@ -214,24 +228,12 @@
           </div>
         </section>
 
-        <section class="album-section standalone-view" id="album" aria-labelledby="album-title">
-          <div class="section-title"><div><p class="eyebrow">Tu colección</p><h2 id="album-title">Álbum de cervezas</h2></div><span class="section-badge" id="album-progress">0 probadas</span></div>
-          <div class="album-toolbar">
-            <label class="album-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.2 4.2"/></svg><input id="beer-search" type="search" autocomplete="off" placeholder="Nombre, país, tipo o sabor…" aria-label="Buscar cerveza" /></label>
-            <div class="album-filters" role="group" aria-label="Filtrar álbum"><button class="is-active" type="button" data-album-filter="all">Catálogo</button><button type="button" data-album-filter="tried">Probadas</button></div>
-          </div>
-          <div class="album-summary"><div><strong id="album-tried-count">0</strong><small>Probadas</small></div><div><strong id="album-catalog-count">—</strong><small>En catálogo</small></div></div>
-          <div class="beer-album-grid" id="beer-album-grid" aria-live="polite"></div>
-          <div class="album-empty" id="album-empty" hidden><span>⌕</span><strong>No encontramos esa cerveza</strong><small>Prueba con la marca, el país o una parte del nombre.</small></div>
-          <p class="album-attribution">Catálogo cerrado generado desde la base de datos proporcionada. Fotografías verificadas en <a href="https://commons.wikimedia.org/" target="_blank" rel="noreferrer">Wikimedia Commons</a>; cuando no existe una coincidencia fiable se utiliza una ilustración propia. Banderas de <a href="https://github.com/jdecked/twemoji" target="_blank" rel="noreferrer">Twemoji</a>.</p>
-        </section>
       </main>
+      <button class="floating-add" id="floating-add" type="button" aria-haspopup="dialog" aria-label="Añadir una cerveza"><span>+1</span><img src="assets/loading-beers.png" alt="" /></button>
       <nav class="bottom-nav" aria-label="Navegación principal">
         <button class="nav-item is-active" type="button" data-target="inicio"><span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M3 10.8 12 3l9 7.8v9.1a1.1 1.1 0 0 1-1.1 1.1H15v-6H9v6H4.1A1.1 1.1 0 0 1 3 19.9v-9.1Z"/></svg></span><small>Inicio</small></button>
         <button class="nav-item" type="button" data-target="formatos"><span class="nav-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v8.5l6.8 5"/></svg></span><small>Formatos</small></button>
         <button class="nav-item" type="button" data-target="datos"><span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M5 20V10M12 20V4M19 20v-7"/></svg></span><small>Estadísticas</small></button>
-        <button class="nav-item" type="button" data-target="historial"><span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M8 6h12M8 12h12M8 18h12"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg></span><small>Historial</small></button>
-        <button class="nav-item" type="button" data-target="album"><span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M5 4h12a2 2 0 0 1 2 2v14H7a2 2 0 0 1-2-2V4Z"/><path d="M8 4v16M11 9h5M11 13h4"/></svg></span><small>Álbum</small></button>
         <button class="nav-item" type="button" data-target="perfil"><span class="nav-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4.5 21a7.5 7.5 0 0 1 15 0"/></svg></span><small>Mi perfil</small></button>
       </nav>
     </div>
@@ -348,10 +350,10 @@
     </dialog>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script src="assets/vendor/leaflet.js?v=36"></script>
-    <script src="assets/vendor/leaflet-heat.js?v=36"></script>
-    <script src="beer-catalog.js?v=36"></script>
-    <script type="module" src="firebase-sync.js?v=36"></script>
-    <script src="script.js?v=36"></script>
+    <script src="assets/vendor/leaflet.js?v=37"></script>
+    <script src="assets/vendor/leaflet-heat.js?v=37"></script>
+    <script src="beer-catalog.js?v=37"></script>
+    <script type="module" src="firebase-sync.js?v=37"></script>
+    <script src="script.js?v=37"></script>
   </body>
 </html>

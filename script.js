@@ -682,7 +682,9 @@ function beginAutomaticLocationCapture() {
   });
   return locationRequest;
 }
-$("#open-add").addEventListener("click", () => { els.addDialog.showModal(); beginAutomaticLocationCapture(); });
+function openAddDialog() { els.addDialog.showModal(); beginAutomaticLocationCapture(); }
+$("#open-add").addEventListener("click", openAddDialog);
+$("#floating-add").addEventListener("click", openAddDialog);
 $("#open-more").addEventListener("click", () => els.moreDialog.showModal());
 $("#open-settings").addEventListener("click", () => els.settingsDialog.showModal());
 $("#unit-toggle").addEventListener("click", () => { volumeUnit = volumeUnit === "L" ? "mL" : "L"; render(); });
@@ -757,13 +759,35 @@ $("#groups-list").addEventListener("click", async (event) => {
   window.dispatchEvent(new CustomEvent("birrometro-group-leave", {detail:{groupId:leaveButton.dataset.leaveGroup}}));
 });
 const appShell = document.querySelector(".app-shell");
+let primaryAddIsVisible = true;
+function updateFloatingAdd() {
+  const shouldShow = appShell.dataset.auth === "ready" && (appShell.dataset.view !== "home" || !primaryAddIsVisible);
+  $("#floating-add").classList.toggle("is-visible", shouldShow);
+}
+if ("IntersectionObserver" in window) {
+  const addButtonObserver = new IntersectionObserver(([entry]) => {
+    primaryAddIsVisible = entry.isIntersecting && entry.intersectionRatio >= .3;
+    updateFloatingAdd();
+  }, {threshold:[0,.3,.75]});
+  addButtonObserver.observe($("#open-add"));
+} else {
+  const checkPrimaryAdd = () => {
+    const bounds = $("#open-add").getBoundingClientRect();
+    primaryAddIsVisible = bounds.bottom > 0 && bounds.top < window.innerHeight;
+    updateFloatingAdd();
+  };
+  window.addEventListener("scroll", checkPrimaryAdd, {passive:true});
+  window.addEventListener("resize", checkPrimaryAdd);
+  checkPrimaryAdd();
+}
 document.querySelectorAll(".nav-item").forEach((button) => button.addEventListener("click", () => {
   const targetId = button.dataset.target; const target = document.getElementById(targetId); if (!target) return;
-  const standalone = targetId === "historial" || targetId === "perfil" || targetId === "album";
+  const standalone = targetId === "perfil";
   appShell.dataset.view = standalone ? targetId : "home";
   document.querySelectorAll(".nav-item").forEach((item) => item.classList.toggle("is-active", item === button));
-  if (standalone) { window.scrollTo({top:0, behavior:"smooth"}); if (targetId === "perfil") requestAnimationFrame(() => requestAnimationFrame(renderLocationMap)); return; }
-  requestAnimationFrame(() => target.scrollIntoView({behavior:"smooth", block:"start"}));
+  updateFloatingAdd();
+  if (standalone) { window.scrollTo({top:0, behavior:"smooth"}); requestAnimationFrame(() => requestAnimationFrame(renderLocationMap)); return; }
+  requestAnimationFrame(() => { target.scrollIntoView({behavior:"smooth", block:"start"}); updateFloatingAdd(); });
 }));
 $("#map-filter-toggle").addEventListener("click", () => {
   const panel = $("#map-filter-panel"); panel.hidden = !panel.hidden;
@@ -829,7 +853,7 @@ window.addEventListener("birrometro-auth", (event) => {
   $("#profile-name").textContent = user?.displayName || "Tus datos, en todos tus dispositivos";
   $("#profile-email").textContent = user?.email || "Inicia sesión para sincronizar Birrómetro";
   $("#profile-avatar").innerHTML = user?.photoURL ? `<img src="${escapeHtml(user.photoURL)}" alt="" referrerpolicy="no-referrer" />` : "B";
-  render();
+  render(); updateFloatingAdd();
 });
 window.addEventListener("birrometro-groups", (event) => {
   groups = Array.isArray(event.detail) ? event.detail : [];
