@@ -329,7 +329,7 @@ function renderVolumes(today, week, month) {
   document.querySelectorAll(".volume-unit").forEach((element) => { element.textContent = volumeUnit; });
   $("#unit-toggle").textContent = volumeUnit;
 }
-const FORMAT_COLORS = ["#ffb21a", "#ff6b35", "#6c5ce7", "#16a085", "#e84393", "#0984e3", "#8e6b48", "#d63031", "#00a884", "#7f8c8d", "#f39c12"];
+const FORMAT_COLORS = ["#ffb20f", "#d96a32", "#68725d", "#a97b32", "#4f5949", "#e5a13a", "#8d4f2b", "#b3a36e", "#334037", "#c67c52", "#7b6b48", "#e0b557"];
 function getFormatStats() {
   const stats = new Map();
   state.drinks.forEach((drink) => {
