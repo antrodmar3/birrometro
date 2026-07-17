@@ -110,6 +110,8 @@ let activeUserId = null;
 let volumeUnit = "L";
 const beerCatalog = CLOSED_BEER_CATALOG;
 let albumFilter = "all";
+let groups = [];
+let groupOperationPending = false;
 let pendingLocation = null;
 let locationRequest = Promise.resolve(null);
 let locationCaptureSequence = 0;
@@ -581,6 +583,38 @@ function renderLocationMap({fit=true} = {}) {
   if (points.length === 1) beerMap.setView(points[0], 15);
   else beerMap.fitBounds(L.latLngBounds(points.map((point) => [point[0],point[1]])), {padding:[34,34],maxZoom:15});
 }
+function renderGroups() {
+  const list = $("#groups-list");
+  const empty = $("#groups-empty");
+  if (!list || !empty) return;
+  const orderedGroups = [...groups].sort((a,b) => String(a.name || "").localeCompare(String(b.name || ""), "es", {sensitivity:"base"}));
+  $("#groups-count").textContent = `${orderedGroups.length} ${orderedGroups.length === 1 ? "grupo" : "grupos"}`;
+  empty.hidden = orderedGroups.length > 0;
+  list.hidden = orderedGroups.length === 0;
+  list.innerHTML = orderedGroups.map((group) => {
+    const members = [...(Array.isArray(group.members) ? group.members : [])].sort((a,b) => Number(b.yearCount || 0) - Number(a.yearCount || 0) || Number(b.yearMl || 0) - Number(a.yearMl || 0) || String(a.displayName || "").localeCompare(String(b.displayName || ""), "es"));
+    const highestCount = Math.max(1, ...members.map((member) => Number(member.yearCount || 0)));
+    const memberRows = members.map((member,index) => {
+      const isCurrentUser = member.id === activeUserId;
+      const count = Number(member.yearCount || 0);
+      const monthCount = Number(member.monthCount || 0);
+      const liters = Number(member.yearMl || 0) / 1000;
+      const progress = Math.max(3, Math.round((count / highestCount) * 100));
+      return `<div class="group-member${isCurrentUser ? " is-current-user" : ""}" style="--member-bar:${progress}%">
+        <span class="group-member__rank">${index + 1}</span>
+        <span class="group-member__identity"><strong>${escapeHtml(member.displayName || "Miembro")}${isCurrentUser ? " · Tú" : ""}</strong><small>${escapeHtml(member.favoriteType || "—")} · ${monthCount} este mes</small></span>
+        <span class="group-member__stats"><strong>${count}</strong><small>${liters.toLocaleString("es-ES", {maximumFractionDigits:1})} L este año</small></span>
+      </div>`;
+    }).join("");
+    const isOwner = group.ownerId === activeUserId;
+    return `<article class="group-card">
+      <div class="group-card__head"><div><h4>${escapeHtml(group.name || "Grupo")}</h4><small>${members.length} ${members.length === 1 ? "integrante" : "integrantes"} · clasificación anual</small></div>
+      <button class="group-code" type="button" data-copy-group-code="${escapeHtml(group.id)}" aria-label="Copiar código ${escapeHtml(group.id)}"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="11" height="11" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>${escapeHtml(group.id)}</button></div>
+      <div class="group-ranking">${memberRows || '<div class="groups-empty"><strong>Preparando la clasificación</strong><small>Los datos aparecerán al sincronizar los integrantes.</small></div>'}</div>
+      ${isOwner ? '<small class="group-owner-note">Has creado este grupo. Comparte el código para invitar a otras personas.</small>' : `<button class="group-leave" type="button" data-leave-group="${escapeHtml(group.id)}">Salir del grupo</button>`}
+    </article>`;
+  }).join("");
+}
 function render() {
   const today = since(startOfDay()); const week = since(startOfWeek()); const month = since(startOfMonth());
   const currentYear = new Date().getFullYear();
@@ -612,6 +646,7 @@ function render() {
   $("#profile-favorite").textContent = favorite?.type || "—";
   renderDriverProfile();
   renderBeerAlbum();
+  renderGroups();
   renderLocationMap();
 }
 function escapeHtml(value) { const node = document.createElement("span"); node.textContent = value; return node.innerHTML; }
@@ -684,6 +719,43 @@ $("#driver-profile-form").addEventListener("submit", (event) => {
   state.driver = sanitizeDriverProfile({enabled:$("#driver-enabled").checked,weight:weightValue || null,height:heightValue || null});
   save(); render(); showToast("Modo Conductor actualizado");
 });
+function setGroupOperationPending(pending) {
+  groupOperationPending = pending;
+  document.querySelectorAll(".group-submit, .groups-actions button, .group-leave").forEach((button) => { button.disabled = pending; });
+}
+$("#open-create-group").addEventListener("click", () => {
+  $("#create-group-dialog").showModal();
+  requestAnimationFrame(() => $("#group-name").focus());
+});
+$("#open-join-group").addEventListener("click", () => {
+  $("#join-group-dialog").showModal();
+  requestAnimationFrame(() => $("#group-code").focus());
+});
+$("#group-code").addEventListener("input", (event) => {
+  event.currentTarget.value = event.currentTarget.value.toUpperCase().replace(/[^A-HJ-NP-Z2-9]/g, "").slice(0, 8);
+});
+$("#create-group-form").addEventListener("submit", (event) => {
+  event.preventDefault();
+  if (groupOperationPending) return;
+  window.dispatchEvent(new CustomEvent("birrometro-group-create", {detail:{name:$("#group-name").value}}));
+});
+$("#join-group-form").addEventListener("submit", (event) => {
+  event.preventDefault();
+  if (groupOperationPending) return;
+  window.dispatchEvent(new CustomEvent("birrometro-group-join", {detail:{code:$("#group-code").value}}));
+});
+$("#groups-list").addEventListener("click", async (event) => {
+  const copyButton = event.target.closest("[data-copy-group-code]");
+  if (copyButton) {
+    const code = copyButton.dataset.copyGroupCode;
+    try { await navigator.clipboard.writeText(code); showToast(`Código ${code} copiado`); }
+    catch { showToast(`Código del grupo: ${code}`); }
+    return;
+  }
+  const leaveButton = event.target.closest("[data-leave-group]");
+  if (!leaveButton || groupOperationPending) return;
+  window.dispatchEvent(new CustomEvent("birrometro-group-leave", {detail:{groupId:leaveButton.dataset.leaveGroup}}));
+});
 const appShell = document.querySelector(".app-shell");
 document.querySelectorAll(".nav-item").forEach((button) => button.addEventListener("click", () => {
   const targetId = button.dataset.target; const target = document.getElementById(targetId); if (!target) return;
@@ -745,6 +817,7 @@ window.addEventListener("birrometro-auth", (event) => {
     appShell.dataset.auth = "ready";
   } else {
     activeUserId = null;
+    groups = [];
     applyState({drinks:[],imports:{},album:[]});
     appShell.dataset.auth = "locked";
     appShell.dataset.view = "home";
@@ -757,6 +830,21 @@ window.addEventListener("birrometro-auth", (event) => {
   $("#profile-email").textContent = user?.email || "Inicia sesión para sincronizar Birrómetro";
   $("#profile-avatar").innerHTML = user?.photoURL ? `<img src="${escapeHtml(user.photoURL)}" alt="" referrerpolicy="no-referrer" />` : "B";
   render();
+});
+window.addEventListener("birrometro-groups", (event) => {
+  groups = Array.isArray(event.detail) ? event.detail : [];
+  renderGroups();
+});
+window.addEventListener("birrometro-group-pending", () => setGroupOperationPending(true));
+window.addEventListener("birrometro-group-success", (event) => {
+  setGroupOperationPending(false);
+  [$("#create-group-dialog"), $("#join-group-dialog")].forEach((dialog) => { if (dialog.open) dialog.close(); });
+  $("#create-group-form").reset(); $("#join-group-form").reset();
+  showToast(event.detail || "Grupo actualizado");
+});
+window.addEventListener("birrometro-group-error", (event) => {
+  setGroupOperationPending(false);
+  showToast(event.detail || "No se pudo actualizar el grupo");
 });
 window.addEventListener("birrometro-cloud-state", (event) => {
   if (!activeUserId || !Array.isArray(event.detail?.drinks)) return;

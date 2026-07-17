@@ -15,8 +15,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="assets/vendor/leaflet.css?v=35" />
-    <link rel="stylesheet" href="styles.css?v=35" />
+    <link rel="stylesheet" href="assets/vendor/leaflet.css?v=36" />
+    <link rel="stylesheet" href="styles.css?v=36" />
   </head>
   <body>
     <div class="app-shell" data-view="home" data-auth="pending">
@@ -163,6 +163,17 @@
               <article><span class="profile-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-2.9-5.6 2.9 1.1-6.2L3 9.6l6.2-.9L12 3Z"/></svg></span><small>Favorita</small><strong id="profile-favorite">—</strong><em>formato habitual</em></article>
             </div>
           </div>
+          <section class="groups-card" aria-labelledby="groups-title">
+            <div class="groups-head">
+              <span class="groups-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="8" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M2.5 20a5.5 5.5 0 0 1 11 0M13.5 20a4.5 4.5 0 0 1 8 0"/></svg></span>
+              <div><p class="eyebrow">Comparte la ronda</p><h3 id="groups-title">Mis grupos</h3></div>
+              <span class="groups-count" id="groups-count">0 grupos</span>
+            </div>
+            <p class="groups-intro">Crea un grupo o entra con un código para comparar el consumo anual, el volumen y los formatos favoritos. El historial y las ubicaciones de cada persona permanecen privados.</p>
+            <div class="groups-actions"><button class="group-primary" id="open-create-group" type="button"><span aria-hidden="true">+</span>Crear grupo</button><button class="group-secondary" id="open-join-group" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l2-2a5 5 0 0 0-7-7.5l-1.1 1.1M14 11a5 5 0 0 0-7.5-.5l-2 2a5 5 0 0 0 7 7.5l1.1-1.1"/></svg>Unirme con código</button></div>
+            <div class="groups-empty" id="groups-empty"><strong>Tu primera ronda compartida empieza aquí</strong><small>El código de invitación permite que se unan hasta 20 personas.</small></div>
+            <div class="groups-list" id="groups-list" aria-live="polite"></div>
+          </section>
           <section class="driver-card" aria-labelledby="driver-title">
             <div class="driver-card__head">
               <span class="driver-card__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 15.5V12l2.2-5.1A2 2 0 0 1 8 5.7h8a2 2 0 0 1 1.8 1.2L20 12v3.5"/><path d="M3 12h18v6H3zM6 18v2M18 18v2"/><circle cx="7" cy="15" r="1.2"/><circle cx="17" cy="15" r="1.2"/></svg></span>
@@ -289,6 +300,26 @@
       </form>
     </dialog>
 
+    <dialog id="create-group-dialog" class="size-dialog">
+      <form id="create-group-form" class="size-sheet">
+        <div class="sheet-handle" aria-hidden="true"></div>
+        <div class="dialog-head"><div><p class="eyebrow">Nueva ronda</p><h2>Crear un grupo</h2></div><button class="close-button" type="button" data-close-dialog aria-label="Cerrar">×</button></div>
+        <p class="dialog-copy">Ponle un nombre. Después recibirás un código para invitar a otras personas.</p>
+        <label>Nombre del grupo<input id="group-name" name="name" type="text" maxlength="40" autocomplete="off" placeholder="Ej. La oficina" required /></label>
+        <button class="primary-button group-submit" type="submit">Crear grupo</button>
+      </form>
+    </dialog>
+
+    <dialog id="join-group-dialog" class="size-dialog">
+      <form id="join-group-form" class="size-sheet">
+        <div class="sheet-handle" aria-hidden="true"></div>
+        <div class="dialog-head"><div><p class="eyebrow">Código de invitación</p><h2>Unirme a un grupo</h2></div><button class="close-button" type="button" data-close-dialog aria-label="Cerrar">×</button></div>
+        <p class="dialog-copy">Introduce el código de ocho caracteres que te haya compartido otro integrante.</p>
+        <label>Código<input class="group-code-input" id="group-code" name="code" type="text" minlength="8" maxlength="8" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ABCD2345" required /></label>
+        <button class="primary-button group-submit" type="submit">Entrar en el grupo</button>
+      </form>
+    </dialog>
+
     <dialog id="beer-detail-dialog" class="beer-detail-dialog">
       <article class="beer-detail-panel">
         <button class="close-button beer-detail-close" type="button" data-close-dialog aria-label="Cerrar ficha">×</button>
@@ -317,10 +348,10 @@
     </dialog>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script src="assets/vendor/leaflet.js?v=35"></script>
-    <script src="assets/vendor/leaflet-heat.js?v=35"></script>
-    <script src="beer-catalog.js?v=35"></script>
-    <script type="module" src="firebase-sync.js?v=35"></script>
-    <script src="script.js?v=35"></script>
+    <script src="assets/vendor/leaflet.js?v=36"></script>
+    <script src="assets/vendor/leaflet-heat.js?v=36"></script>
+    <script src="beer-catalog.js?v=36"></script>
+    <script type="module" src="firebase-sync.js?v=36"></script>
+    <script src="script.js?v=36"></script>
   </body>
 </html>
