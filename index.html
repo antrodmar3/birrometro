@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#f5f1e8" />
     <meta name="description" content="Birrómetro: registra tu consumo de cerveza de forma sencilla y consciente." />
     <title>Birrómetro</title>
-    <link rel="manifest" href="manifest.webmanifest?v=40" />
+    <link rel="manifest" href="manifest.webmanifest?v=41" />
     <link rel="preload" href="assets/loading-beers.png" as="image" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Birrómetro" />
@@ -15,8 +15,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,800;9..144,900&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="assets/vendor/leaflet.css?v=40" />
-    <link rel="stylesheet" href="styles.css?v=40" />
+    <link rel="stylesheet" href="assets/vendor/leaflet.css?v=41" />
+    <link rel="stylesheet" href="styles.css?v=41" />
   </head>
   <body>
     <div class="app-shell" data-view="home" data-auth="pending">
@@ -214,7 +214,10 @@
             </div>
             <div class="beer-map" id="beer-map" aria-label="Mapa de calor de los lugares donde has tomado cerveza">
               <div class="map-tools" id="map-tools">
-                <button class="map-filter-toggle" id="map-filter-toggle" type="button" aria-expanded="false" aria-controls="map-filter-panel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg><span>Filtrar</span><b id="map-filter-count">12/12</b></button>
+                <div class="map-tool-row">
+                  <button class="map-fullscreen-toggle" id="map-fullscreen-toggle" type="button" aria-pressed="false" aria-label="Abrir mapa a pantalla completa"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/></svg><span>Ampliar</span></button>
+                  <button class="map-filter-toggle" id="map-filter-toggle" type="button" aria-expanded="false" aria-controls="map-filter-panel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg><span>Filtrar</span><b id="map-filter-count">12/12</b></button>
+                </div>
                 <div class="map-filter-panel" id="map-filter-panel" hidden>
                   <label class="map-period"><span>Periodo</span><select id="location-period"><option value="all">Todo</option><option value="year">Este año</option><option value="month">Este mes</option></select></label>
                   <div class="map-filter-heading"><div><strong>Formatos</strong><small>Elige qué aparece en el mapa</small></div><div><button id="map-select-all" type="button">Todos</button><button id="map-select-none" type="button">Ninguno</button></div></div>
@@ -224,7 +227,11 @@
               </div>
               <div class="map-empty" id="map-empty"><span aria-hidden="true"><img src="icon.svg" alt="" /></span><strong>Aún no hay ubicaciones</strong><small>La ubicación se añadirá automáticamente a tus próximas birras cuando hayas permitido el acceso.</small></div>
             </div>
-            <div class="location-stats"><article><strong id="map-location-count">0</strong><small>Zonas</small></article><article><strong id="map-favorite-place">—</strong><small>Más visitada</small></article><article><strong id="map-drink-count">0</strong><small>Birras mapeadas</small></article></div>
+            <div class="location-stats">
+              <article class="location-stat"><span class="location-stat__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 21s7-5.1 7-12a7 7 0 1 0-14 0c0 6.9 7 12 7 12Z"/><circle cx="12" cy="9" r="2.4"/></svg></span><span><strong id="map-location-count">0</strong><small>Zonas registradas</small></span></article>
+              <button class="location-stat location-stat--favorite" id="map-favorite-card" type="button" disabled aria-label="Ver la zona más visitada en el mapa"><span class="location-stat__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m12 3 2.2 4.5 5 .7-3.6 3.5.8 5-4.4-2.3-4.4 2.3.8-5-3.6-3.5 5-.7L12 3Z"/></svg></span><span class="location-stat__copy"><small>Zona más visitada</small><strong id="map-favorite-place">—</strong><em id="map-favorite-detail">Sin ubicaciones todavía</em></span><svg class="location-stat__arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button>
+              <article class="location-stat"><span class="location-stat__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 4h8l1 16H7L8 4Z"/><path d="M7.5 9h9"/></svg></span><span><strong id="map-drink-count">0</strong><small>Birras mapeadas</small></span></article>
+            </div>
             <p class="location-privacy"><span class="location-privacy__copy"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>La ubicación se captura automáticamente al registrar y se sincroniza de forma privada con tu cuenta.</span><strong class="location-coverage" id="map-location-coverage">0 de 0 con ubicación</strong></p>
           </div>
         </section>
@@ -371,10 +378,10 @@
     </dialog>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script src="assets/vendor/leaflet.js?v=40"></script>
-    <script src="assets/vendor/leaflet-heat.js?v=40"></script>
-    <script src="beer-catalog.js?v=40"></script>
-    <script type="module" src="firebase-sync.js?v=40"></script>
-    <script src="script.js?v=40"></script>
+    <script src="assets/vendor/leaflet.js?v=41"></script>
+    <script src="assets/vendor/leaflet-heat.js?v=41"></script>
+    <script src="beer-catalog.js?v=41"></script>
+    <script type="module" src="firebase-sync.js?v=41"></script>
+    <script src="script.js?v=41"></script>
   </body>
 </html>

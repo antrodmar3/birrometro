@@ -120,6 +120,8 @@ let beerHeatLayer = null;
 let beerPointLayer = null;
 let beerMapResizeObserver = null;
 let beerMapSignature = "";
+let favoriteMapZone = null;
+let favoriteZonePopup = null;
 let editLocationMap = null;
 let editLocationMarker = null;
 let editingDrinkId = null;
@@ -510,18 +512,47 @@ function renderLocationStats(located, allLocated = periodLocatedDrinks()) {
   const zones = new Map();
   located.forEach((drink) => {
     const location = sanitizeLocation(drink.location); const key = locationZoneKey(location);
-    const zone = zones.get(key) || {count:0,names:new Map()}; zone.count += 1;
+    const zone = zones.get(key) || {count:0,names:new Map(),latitudeSum:0,longitudeSum:0}; zone.count += 1;
+    zone.latitudeSum += location.latitude; zone.longitudeSum += location.longitude;
     if (location.name) zone.names.set(location.name, (zone.names.get(location.name) || 0) + 1);
     zones.set(key, zone);
   });
-  const favorite = [...zones.values()].sort((a,b) => b.count - a.count)[0];
+  const favorite = [...zones.values()].sort((a,b) => b.count - a.count || [...a.names.keys()].join("").localeCompare([...b.names.keys()].join(""),"es"))[0];
   const favoriteName = favorite ? [...favorite.names.entries()].sort((a,b) => b[1] - a[1])[0]?.[0] : "";
+  favoriteMapZone = favorite ? {latitude:favorite.latitudeSum / favorite.count,longitude:favorite.longitudeSum / favorite.count,count:favorite.count,name:favoriteName || "Zona habitual"} : null;
   $("#map-location-count").textContent = zones.size;
   $("#map-drink-count").textContent = located.length;
-  $("#map-favorite-place").textContent = favorite ? favoriteName || "Zona habitual" : "—";
+  $("#map-favorite-place").textContent = favoriteMapZone?.name || "—";
   $("#map-favorite-place").title = favoriteName || "";
+  const favoriteCard = $("#map-favorite-card");
+  favoriteCard.disabled = !favoriteMapZone;
+  favoriteCard.classList.toggle("has-location",Boolean(favoriteMapZone));
+  $("#map-favorite-detail").textContent = favoriteMapZone ? `${favoriteMapZone.count} ${favoriteMapZone.count === 1 ? "birra" : "birras"} · Ver en el mapa` : "Sin ubicaciones todavía";
   const periodTotal = drinksForLocationPeriod().length;
   $("#map-location-coverage").textContent = `${allLocated.length} de ${periodTotal} con ubicación`;
+}
+function setMapFullscreen(active) {
+  const mapElement = $("#beer-map"); const button = $("#map-fullscreen-toggle");
+  if (!mapElement || !button) return;
+  mapElement.classList.toggle("is-fullscreen",active);
+  document.body.classList.toggle("map-fullscreen-open",active);
+  button.setAttribute("aria-pressed",String(active));
+  button.setAttribute("aria-label",active ? "Cerrar mapa a pantalla completa" : "Abrir mapa a pantalla completa");
+  button.querySelector("span").textContent = active ? "Cerrar" : "Ampliar";
+  requestAnimationFrame(() => requestAnimationFrame(() => beerMap?.invalidateSize({animate:false,pan:false})));
+}
+function focusFavoriteMapZone() {
+  if (!favoriteMapZone || !ensureBeerMap()) return;
+  $("#map-filter-panel").hidden = true;
+  $("#map-filter-toggle").setAttribute("aria-expanded","false");
+  const point = [favoriteMapZone.latitude,favoriteMapZone.longitude];
+  beerMap.flyTo(point,Math.max(beerMap.getZoom(),16),{duration:.65});
+  if (!$("#beer-map").classList.contains("is-fullscreen")) $("#beer-map").scrollIntoView({behavior:"smooth",block:"center"});
+  if (favoriteZonePopup) favoriteZonePopup.remove();
+  favoriteZonePopup = L.popup({offset:[0,-8],closeButton:true})
+    .setLatLng(point)
+    .setContent(`<div class="favorite-zone-popup"><small>Zona más visitada</small><strong>${escapeHtml(favoriteMapZone.name)}</strong><span>${favoriteMapZone.count} ${favoriteMapZone.count === 1 ? "birra registrada" : "birras registradas"}</span></div>`)
+    .openOn(beerMap);
 }
 function ensureBeerMap() {
   const container = $("#beer-map");
@@ -942,6 +973,9 @@ $("#map-filter-toggle").addEventListener("click", () => {
   const panel = $("#map-filter-panel"); panel.hidden = !panel.hidden;
   $("#map-filter-toggle").setAttribute("aria-expanded",String(!panel.hidden));
 });
+$("#map-fullscreen-toggle").addEventListener("click", () => setMapFullscreen(!$("#beer-map").classList.contains("is-fullscreen")));
+$("#map-favorite-card").addEventListener("click", focusFavoriteMapZone);
+document.addEventListener("keydown", (event) => { if (event.key === "Escape" && $("#beer-map").classList.contains("is-fullscreen")) setMapFullscreen(false); });
 $("#map-format-filters").addEventListener("click", (event) => {
   const button = event.target.closest("[data-map-format]"); if (!button) return;
   const type = button.dataset.mapFormat;
