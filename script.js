@@ -120,6 +120,10 @@ let beerHeatLayer = null;
 let beerPointLayer = null;
 let beerMapResizeObserver = null;
 let beerMapSignature = "";
+let editLocationMap = null;
+let editLocationMarker = null;
+let editingDrinkId = null;
+let pendingEditLocation = null;
 const mapDisabledFormats = new Set();
 const FORMAT_ICON_PATHS = Object.freeze({
   "Botellín":"assets/menu-icons/botellin.webp", "Caña":"assets/menu-icons/cana.webp", "Copa":"assets/menu-icons/copa.webp",
@@ -554,6 +558,65 @@ function beerMapMarkerIcon(type) {
   const source = FORMAT_ICON_PATHS[type] || "icon.svg";
   return L.divIcon({className:"beer-map-marker",html:`<span><img src="${source}" alt="" /></span>`,iconSize:[46,54],iconAnchor:[23,49],popupAnchor:[0,-45]});
 }
+function selectedEditFormatType() { return String($("#edit-entry-format")?.value || "330|Lata|5").split("|")[1]; }
+function updateEditLocationSummary() {
+  const coordinates = $("#edit-location-coordinates");
+  if (!pendingEditLocation) { coordinates.textContent = "Sin ubicación"; return; }
+  coordinates.textContent = `${pendingEditLocation.latitude.toFixed(4)}, ${pendingEditLocation.longitude.toFixed(4)}`;
+}
+function setEditLocation(value, {center=true,syncName=false} = {}) {
+  pendingEditLocation = sanitizeLocation(value);
+  if (syncName) $("#edit-location-name").value = pendingEditLocation?.name || "";
+  updateEditLocationSummary();
+  if (!editLocationMap) return;
+  if (!pendingEditLocation) {
+    if (editLocationMarker) { editLocationMap.removeLayer(editLocationMarker); editLocationMarker = null; }
+    return;
+  }
+  const point = [pendingEditLocation.latitude,pendingEditLocation.longitude];
+  if (!editLocationMarker) {
+    editLocationMarker = L.marker(point,{draggable:true,icon:beerMapMarkerIcon(selectedEditFormatType()),title:"Ubicación del registro"}).addTo(editLocationMap);
+    editLocationMarker.on("dragend", () => {
+      const position = editLocationMarker.getLatLng();
+      setEditLocation({latitude:position.lat,longitude:position.lng,name:$("#edit-location-name").value},{center:false});
+      $("#edit-location-status").textContent = "Punto ajustado. Guarda los cambios para confirmar.";
+    });
+  } else {
+    editLocationMarker.setLatLng(point);
+    editLocationMarker.setIcon(beerMapMarkerIcon(selectedEditFormatType()));
+  }
+  if (center) editLocationMap.setView(point,Math.max(editLocationMap.getZoom(),15));
+}
+function ensureEditLocationMap() {
+  const container = $("#edit-location-map");
+  if (editLocationMap || !window.L || !container) return Boolean(editLocationMap);
+  editLocationMap = L.map(container,{boxZoom:true,doubleClickZoom:true,dragging:true,keyboard:true,scrollWheelZoom:true,touchZoom:true,zoomControl:true,tap:false}).setView([40.2,-3.7],5);
+  const tiles = L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",{maxZoom:20,subdomains:"abcd",attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'}).addTo(editLocationMap);
+  tiles.on("tileerror", ({tile,coords}) => { if (!tile || tile.dataset.fallbackSource) return; tile.dataset.fallbackSource="openstreetmap"; tile.src=`https://tile.openstreetmap.org/${coords.z}/${coords.x}/${coords.y}.png`; });
+  editLocationMap.on("click", (event) => {
+    setEditLocation({latitude:event.latlng.lat,longitude:event.latlng.lng,name:$("#edit-location-name").value},{center:false});
+    $("#edit-location-status").textContent = "Punto colocado. Puedes arrastrarlo para afinar la ubicación.";
+  });
+  return true;
+}
+function openEditEntry(drinkId) {
+  const drink = state.drinks.find((entry) => entry.id === drinkId); if (!drink) return;
+  editingDrinkId = drink.id;
+  $("#edit-entry-date").value = localDateTime(new Date(drink.date));
+  const option = [...$("#edit-entry-format").options].find((item) => item.value.split("|")[1] === drink.type);
+  if (option) $("#edit-entry-format").value = option.value;
+  pendingEditLocation = sanitizeLocation(drink.location);
+  $("#edit-location-name").value = pendingEditLocation?.name || "";
+  $("#edit-location-status").textContent = pendingEditLocation ? "Arrastra el punto o toca el mapa para cambiarlo." : "Toca el mapa para colocar el punto o usa tu ubicación actual.";
+  updateEditLocationSummary();
+  $("#edit-entry-dialog").showModal();
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    if (!ensureEditLocationMap()) return;
+    editLocationMap.invalidateSize({animate:false});
+    if (pendingEditLocation) setEditLocation(pendingEditLocation,{center:true});
+    else { if (editLocationMarker) { editLocationMap.removeLayer(editLocationMarker); editLocationMarker=null; } editLocationMap.setView([40.2,-3.7],5); }
+  }));
+}
 function spreadMarkerCoordinates(location, occurrences) {
   const key = `${location.latitude.toFixed(5)}|${location.longitude.toFixed(5)}`;
   const index = occurrences.get(key) || 0; occurrences.set(key,index + 1);
@@ -647,10 +710,10 @@ function render() {
   els.streak.textContent = currentStreak();
   $("#hero-week-count").textContent = week.length; $("#hero-streak-count").textContent = currentStreak();
   els.history.innerHTML = "";
-  [...state.drinks].sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0,30).forEach((drink) => {
+  [...state.drinks].sort((a,b) => new Date(b.date) - new Date(a.date)).forEach((drink) => {
     const date = new Date(drink.date); const li = document.createElement("li"); li.className = "history-item";
     const location = sanitizeLocation(drink.location); const locationCopy = location ? ` · 📍 ${location.name || "Con ubicación"}` : "";
-    li.innerHTML = `<span class="beer-dot">●</span><span class="history-main"><strong>${escapeHtml(drink.type)} · ${drink.volume} ml</strong><small>${escapeHtml(drink.note || `${drink.abv}% vol.`)}${escapeHtml(locationCopy)}</small></span><span class="history-meta">${new Intl.DateTimeFormat("es-ES",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}).format(date)}</span><button class="delete-entry" data-id="${drink.id}" aria-label="Eliminar registro">×</button>`;
+    li.innerHTML = `<span class="beer-dot">●</span><span class="history-main"><strong>${escapeHtml(drink.type)} · ${drink.volume} ml</strong><small>${escapeHtml(drink.note || `${drink.abv}% vol.`)}${escapeHtml(locationCopy)}</small></span><span class="history-meta">${new Intl.DateTimeFormat("es-ES",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}).format(date)}</span><span class="history-actions"><button class="edit-entry" data-edit-id="${drink.id}" type="button" aria-label="Editar registro"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 16-.8 4.8L8 20l10.8-10.8a2.4 2.4 0 0 0-3.4-3.4L4.6 16.6 4 20"/><path d="m14 7 3 3"/></svg></button><button class="delete-entry" data-delete-id="${drink.id}" type="button" aria-label="Eliminar registro">×</button></span>`;
     els.history.appendChild(li);
   });
   els.empty.hidden = state.drinks.length > 0; els.history.hidden = state.drinks.length === 0;
@@ -731,6 +794,35 @@ $("#late-form").addEventListener("submit", (event) => {
   save(); render(); els.lateDialog.close(); showToast("Cerveza añadida al historial");
   maybeShowDriverAlert(addedDrink);
 });
+$("#edit-entry-format").addEventListener("change", () => { if (editLocationMarker) editLocationMarker.setIcon(beerMapMarkerIcon(selectedEditFormatType())); });
+$("#edit-use-current-location").addEventListener("click", () => {
+  const button = $("#edit-use-current-location");
+  if (!navigator.geolocation) { $("#edit-location-status").textContent = "La ubicación no está disponible en este dispositivo."; return; }
+  button.disabled = true; $("#edit-location-status").textContent = "Buscando tu ubicación actual…";
+  navigator.geolocation.getCurrentPosition((position) => {
+    button.disabled = false;
+    setEditLocation({latitude:position.coords.latitude,longitude:position.coords.longitude,accuracy:position.coords.accuracy,name:$("#edit-location-name").value},{center:true});
+    $("#edit-location-status").textContent = `Ubicación actual preparada${position.coords.accuracy ? ` · precisión aproximada ${Math.round(position.coords.accuracy)} m` : ""}.`;
+  }, (error) => {
+    button.disabled = false;
+    $("#edit-location-status").textContent = error?.code === 1 ? "Permite la ubicación para usar tu posición actual." : "No hemos podido obtener tu ubicación actual.";
+  }, {enableHighAccuracy:true,timeout:12000,maximumAge:600000});
+});
+$("#edit-remove-location").addEventListener("click", () => {
+  setEditLocation(null,{syncName:true});
+  $("#edit-location-status").textContent = "La ubicación se eliminará al guardar los cambios.";
+});
+$("#edit-entry-form").addEventListener("submit", (event) => {
+  event.preventDefault();
+  const index = state.drinks.findIndex((drink) => drink.id === editingDrinkId); if (index < 0) return;
+  const editedDate = new Date($("#edit-entry-date").value); if (Number.isNaN(editedDate.getTime())) { showToast("Revisa la fecha y la hora"); return; }
+  const [volume,type,abv="5"] = $("#edit-entry-format").value.split("|");
+  const updated = {...state.drinks[index],volume:Number(volume),type,abv:Number(abv),date:editedDate.toISOString()};
+  const location = pendingEditLocation ? sanitizeLocation({...pendingEditLocation,name:$("#edit-location-name").value}) : null;
+  if (location) updated.location = location; else delete updated.location;
+  state.drinks[index] = updated;
+  save(); render(); $("#edit-entry-dialog").close(); showToast("Registro actualizado");
+});
 $("#undo-last").addEventListener("click", () => {
   const latest = [...state.drinks].sort((a,b) => new Date(b.date) - new Date(a.date))[0]; if (!latest) return;
   state.drinks = state.drinks.filter((drink) => drink.id !== latest.id); save(); render(); els.moreDialog.close(); showToast("Último registro deshecho");
@@ -781,6 +873,41 @@ $("#groups-list").addEventListener("click", async (event) => {
   window.dispatchEvent(new CustomEvent("birrometro-group-leave", {detail:{groupId:leaveButton.dataset.leaveGroup}}));
 });
 const appShell = document.querySelector(".app-shell");
+function setupThemedPullRefresh() {
+  const indicator = $("#pull-refresh"); const label = indicator.querySelector("span");
+  let startY = 0; let pullDistance = 0; let tracking = false; let armed = false;
+  const reset = () => {
+    tracking = false; armed = false; pullDistance = 0;
+    indicator.classList.remove("is-visible","is-armed","is-refreshing");
+    indicator.style.removeProperty("--pull-y"); indicator.setAttribute("aria-hidden","true");
+    label.textContent = "Desliza para refrescar";
+  };
+  document.addEventListener("touchstart", (event) => {
+    const target = event.target instanceof Element ? event.target : null;
+    if (event.touches.length !== 1 || window.scrollY > 0 || appShell.dataset.auth !== "ready" || document.querySelector("dialog[open]") || target?.closest(".leaflet-container,input,select,textarea,[contenteditable]")) return;
+    startY = event.touches[0].clientY; tracking = true; armed = false;
+  }, {passive:true});
+  document.addEventListener("touchmove", (event) => {
+    if (!tracking || event.touches.length !== 1) return;
+    const distance = event.touches[0].clientY - startY;
+    if (distance <= 0) { reset(); return; }
+    event.preventDefault();
+    pullDistance = Math.min(distance * .56,100); armed = pullDistance >= 78;
+    indicator.classList.add("is-visible"); indicator.classList.toggle("is-armed",armed);
+    indicator.style.setProperty("--pull-y",`${pullDistance}px`); indicator.setAttribute("aria-hidden","false");
+    label.textContent = armed ? "Suelta para actualizar" : "Desliza para refrescar";
+  }, {passive:false});
+  const finish = () => {
+    if (!tracking) return;
+    if (!armed) { reset(); return; }
+    tracking = false; indicator.classList.add("is-refreshing"); indicator.classList.remove("is-armed"); label.textContent = "Actualizando la ronda…";
+    if (navigator.vibrate) navigator.vibrate(20);
+    setTimeout(() => location.reload(),360);
+  };
+  document.addEventListener("touchend",finish,{passive:true});
+  document.addEventListener("touchcancel",reset,{passive:true});
+}
+setupThemedPullRefresh();
 let primaryAddIsVisible = true;
 function updateFloatingAdd() {
   const shouldShow = appShell.dataset.auth === "ready" && (appShell.dataset.view !== "home" || !primaryAddIsVisible);
@@ -829,7 +956,13 @@ if ("IntersectionObserver" in window) {
   const navObserver = new IntersectionObserver((entries) => { entries.forEach((entry) => { if (!entry.isIntersecting || appShell.dataset.view !== "home") return; document.querySelectorAll(".nav-item").forEach((item) => item.classList.toggle("is-active", item.dataset.target === entry.target.id)); }); }, {rootMargin:"-25% 0px -65% 0px"});
   ["inicio","formatos","datos"].forEach((id) => { const section = document.getElementById(id); if (section) navObserver.observe(section); });
 }
-els.history.addEventListener("click", (event) => { const button = event.target.closest("[data-id]"); if (!button) return; state.drinks = state.drinks.filter((drink) => drink.id !== button.dataset.id); save(); render(); showToast("Registro eliminado"); });
+els.history.addEventListener("click", (event) => {
+  const editButton = event.target.closest("[data-edit-id]");
+  if (editButton) { openEditEntry(editButton.dataset.editId); return; }
+  const deleteButton = event.target.closest("[data-delete-id]");
+  if (!deleteButton) return;
+  state.drinks = state.drinks.filter((drink) => drink.id !== deleteButton.dataset.deleteId); save(); render(); showToast("Registro eliminado");
+});
 $("#clear-data").addEventListener("click", () => { els.settingsDialog.close(); $("#clear-confirm-dialog").showModal(); });
 $("#confirm-clear-data").addEventListener("click", () => { state.drinks = []; save(); render(); $("#clear-confirm-dialog").close(); showToast("Historial borrado"); });
 function exportData() {

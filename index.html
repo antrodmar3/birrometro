@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#f5f1e8" />
     <meta name="description" content="Birrómetro: registra tu consumo de cerveza de forma sencilla y consciente." />
     <title>Birrómetro</title>
-    <link rel="manifest" href="manifest.webmanifest?v=39" />
+    <link rel="manifest" href="manifest.webmanifest?v=40" />
     <link rel="preload" href="assets/loading-beers.png" as="image" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Birrómetro" />
@@ -15,11 +15,12 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,800;9..144,900&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="assets/vendor/leaflet.css?v=39" />
-    <link rel="stylesheet" href="styles.css?v=39" />
+    <link rel="stylesheet" href="assets/vendor/leaflet.css?v=40" />
+    <link rel="stylesheet" href="styles.css?v=40" />
   </head>
   <body>
     <div class="app-shell" data-view="home" data-auth="pending">
+      <div class="pull-refresh" id="pull-refresh" aria-hidden="true"><img src="assets/loading-beers.png" alt="" /><span>Desliza para refrescar</span></div>
       <section class="app-loader" aria-label="Cargando Birrómetro" aria-live="polite">
         <div class="app-loader__art"><img src="assets/loading-beers.png" alt="Dos jarras de cerveza brindando" /></div>
         <strong>Preparando la ronda</strong>
@@ -302,6 +303,26 @@
       </form>
     </dialog>
 
+    <dialog id="edit-entry-dialog" class="size-dialog edit-entry-dialog">
+      <form id="edit-entry-form" class="size-sheet">
+        <div class="sheet-handle" aria-hidden="true"></div>
+        <div class="dialog-head"><div><p class="eyebrow">Editar consumición</p><h2>Ajustar registro</h2></div><button class="close-button" type="button" data-close-dialog aria-label="Cerrar">×</button></div>
+        <p class="dialog-copy">Corrige el formato, el momento o el lugar donde tomaste esta cerveza.</p>
+        <div class="edit-entry-fields">
+          <label>Fecha y hora<input type="datetime-local" id="edit-entry-date" name="date" required /></label>
+          <label>Formato<select id="edit-entry-format" name="format"><option value="1000|Litro|5">Litro · 1.000 ml</option><option value="330|Lata|5">Lata · 330 ml</option><option value="330|Lata gordita|5">Lata gordita · 330 ml</option><option value="330|Sin|0">Sin · 330 ml · 0 %</option><option value="300|Copa|5">Copa · 300 ml</option><option value="200|Cortá|5">Cortá · 200 ml</option><option value="330|Tercio|5">Tercio · 330 ml</option><option value="250|Botellín|5">Botellín · 250 ml</option><option value="568|Pinta|5">Pinta · 568 ml</option><option value="200|Caña|5">Caña · 200 ml</option><option value="400|Grande|5">Grande · 400 ml</option><option value="500|Yonkilata|5">Yonkilata · 500 ml</option></select></label>
+        </div>
+        <section class="edit-location" aria-labelledby="edit-location-title">
+          <div class="edit-location__head"><div><small>Ubicación</small><strong id="edit-location-title">Corrige el punto en el mapa</strong></div><span id="edit-location-coordinates">Sin ubicación</span></div>
+          <div class="edit-location__actions"><button id="edit-use-current-location" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s7-6 7-12a7 7 0 1 0-14 0c0 6 7 12 7 12Z"/><circle cx="12" cy="9" r="2.5"/></svg>Usar mi ubicación</button><button id="edit-remove-location" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 3h6l1 4H8l1-4M7 7l1 14h8l1-14"/></svg>Quitar</button></div>
+          <div class="edit-location-map" id="edit-location-map" aria-label="Selecciona la ubicación del registro"></div>
+          <label>Nombre del lugar <span>opcional</span><input id="edit-location-name" name="locationName" type="text" maxlength="60" autocomplete="off" placeholder="Ej. Bar Central" /></label>
+          <p id="edit-location-status">Toca el mapa para colocar el punto o arrástralo para ajustarlo.</p>
+        </section>
+        <button class="primary-button" type="submit">Guardar cambios</button>
+      </form>
+    </dialog>
+
     <dialog id="create-group-dialog" class="size-dialog">
       <form id="create-group-form" class="size-sheet">
         <div class="sheet-handle" aria-hidden="true"></div>
@@ -350,10 +371,10 @@
     </dialog>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script src="assets/vendor/leaflet.js?v=39"></script>
-    <script src="assets/vendor/leaflet-heat.js?v=39"></script>
-    <script src="beer-catalog.js?v=39"></script>
-    <script type="module" src="firebase-sync.js?v=39"></script>
-    <script src="script.js?v=39"></script>
+    <script src="assets/vendor/leaflet.js?v=40"></script>
+    <script src="assets/vendor/leaflet-heat.js?v=40"></script>
+    <script src="beer-catalog.js?v=40"></script>
+    <script type="module" src="firebase-sync.js?v=40"></script>
+    <script src="script.js?v=40"></script>
   </body>
 </html>
