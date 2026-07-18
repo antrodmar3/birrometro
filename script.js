@@ -138,6 +138,7 @@ const FORMAT_ICON_PATHS = Object.freeze({
 const beerCatalogById = new Map(beerCatalog.map((beer) => [beer.id, beer]));
 const DRIVER_WINDOW_MS = 2 * 60 * 60 * 1000;
 const ETHANOL_DENSITY = 0.789;
+const LOCATION_SNAP_RADIUS_METERS = 60;
 function defaultDriverProfile() { return {enabled:true,weight:null,height:null}; }
 function sanitizeDriverProfile(value) {
   const weight = Number(value?.weight); const height = Number(value?.height);
@@ -196,6 +197,41 @@ function sanitizeLocation(value) {
     accuracy:Number.isFinite(accuracy) && accuracy > 0 ? Math.round(accuracy) : null,
     name:String(value.name || "").trim().slice(0, 60)
   };
+}
+function locationDistanceMeters(first, second) {
+  const a = sanitizeLocation(first); const b = sanitizeLocation(second); if (!a || !b) return Infinity;
+  const toRadians = (degrees) => degrees * Math.PI / 180;
+  const latitudeDelta = toRadians(b.latitude - a.latitude); const longitudeDelta = toRadians(b.longitude - a.longitude);
+  const firstLatitude = toRadians(a.latitude); const secondLatitude = toRadians(b.latitude);
+  const haversine = Math.sin(latitudeDelta / 2) ** 2 + Math.cos(firstLatitude) * Math.cos(secondLatitude) * Math.sin(longitudeDelta / 2) ** 2;
+  return 6371000 * 2 * Math.atan2(Math.sqrt(haversine),Math.sqrt(1 - haversine));
+}
+function snapLocationToNearby(value, excludedDrinkId = null) {
+  const location = sanitizeLocation(value); if (!location) return null;
+  const nearest = state.drinks
+    .filter((drink) => drink.id !== excludedDrinkId)
+    .map((drink) => ({location:sanitizeLocation(drink.location),date:new Date(drink.date).getTime()}))
+    .filter((entry) => entry.location)
+    .map((entry) => ({...entry,distance:locationDistanceMeters(location,entry.location)}))
+    .filter((entry) => entry.distance <= LOCATION_SNAP_RADIUS_METERS)
+    .sort((a,b) => a.distance - b.distance || b.date - a.date)[0];
+  if (!nearest) return location;
+  return sanitizeLocation({...location,latitude:nearest.location.latitude,longitude:nearest.location.longitude,name:location.name || nearest.location.name});
+}
+function clusterLocatedDrinks(drinks, radius = LOCATION_SNAP_RADIUS_METERS) {
+  const clusters = [];
+  drinks.forEach((drink) => {
+    const location = sanitizeLocation(drink.location); if (!location) return;
+    const nearest = clusters.map((cluster) => ({cluster,distance:locationDistanceMeters(location,cluster)})).sort((a,b) => a.distance - b.distance)[0];
+    if (nearest && nearest.distance <= radius) {
+      const cluster = nearest.cluster; cluster.drinks.push(drink); cluster.latitudeSum += location.latitude; cluster.longitudeSum += location.longitude;
+      cluster.latitude = cluster.latitudeSum / cluster.drinks.length; cluster.longitude = cluster.longitudeSum / cluster.drinks.length;
+      if (location.name) cluster.names.set(location.name,(cluster.names.get(location.name) || 0) + 1);
+      return;
+    }
+    clusters.push({latitude:location.latitude,longitude:location.longitude,latitudeSum:location.latitude,longitudeSum:location.longitude,drinks:[drink],names:new Map(location.name ? [[location.name,1]] : [])});
+  });
+  return clusters;
 }
 function alcoholGrams(drink) {
   return Math.max(0, Number(drink?.volume || 0) * (Number(drink?.abv || 0) / 100) * ETHANOL_DENSITY);
@@ -509,20 +545,12 @@ function renderMapFormatFilters() {
   }).join("");
   $("#map-filter-count").textContent = `${types.length - mapDisabledFormats.size}/${types.length}`;
 }
-function locationZoneKey(location) { return `${location.latitude.toFixed(3)}|${location.longitude.toFixed(3)}`; }
 function renderLocationStats(located, allLocated = periodLocatedDrinks()) {
-  const zones = new Map();
-  located.forEach((drink) => {
-    const location = sanitizeLocation(drink.location); const key = locationZoneKey(location);
-    const zone = zones.get(key) || {count:0,names:new Map(),latitudeSum:0,longitudeSum:0}; zone.count += 1;
-    zone.latitudeSum += location.latitude; zone.longitudeSum += location.longitude;
-    if (location.name) zone.names.set(location.name, (zone.names.get(location.name) || 0) + 1);
-    zones.set(key, zone);
-  });
-  const favorite = [...zones.values()].sort((a,b) => b.count - a.count || [...a.names.keys()].join("").localeCompare([...b.names.keys()].join(""),"es"))[0];
+  const zones = clusterLocatedDrinks(located);
+  const favorite = [...zones].sort((a,b) => b.drinks.length - a.drinks.length || [...a.names.keys()].join("").localeCompare([...b.names.keys()].join(""),"es"))[0];
   const favoriteName = favorite ? [...favorite.names.entries()].sort((a,b) => b[1] - a[1])[0]?.[0] : "";
-  favoriteMapZone = favorite ? {latitude:favorite.latitudeSum / favorite.count,longitude:favorite.longitudeSum / favorite.count,count:favorite.count,name:favoriteName || "Zona habitual"} : null;
-  $("#map-location-count").textContent = zones.size;
+  favoriteMapZone = favorite ? {latitude:favorite.latitude,longitude:favorite.longitude,count:favorite.drinks.length,name:favoriteName || "Zona habitual"} : null;
+  $("#map-location-count").textContent = zones.length;
   $("#map-drink-count").textContent = located.length;
   $("#map-favorite-place").textContent = favoriteMapZone?.name || "—";
   $("#map-favorite-place").title = favoriteName || "";
@@ -606,9 +634,9 @@ function ensureBeerMap() {
   }
   return true;
 }
-function beerMapMarkerIcon(type) {
+function beerMapMarkerIcon(type, count = 1) {
   const source = FORMAT_ICON_PATHS[type] || "icon.svg";
-  return L.divIcon({className:"beer-map-marker",html:`<span><img src="${source}" alt="" /></span>`,iconSize:[46,54],iconAnchor:[23,49],popupAnchor:[0,-45]});
+  return L.divIcon({className:"beer-map-marker",html:`<span><img src="${source}" alt="" />${count > 1 ? `<b>${count}</b>` : ""}</span>`,iconSize:[46,54],iconAnchor:[23,49],popupAnchor:[0,-45]});
 }
 function selectedEditFormatType() { return String($("#edit-entry-format")?.value || "330|Lata|5").split("|")[1]; }
 function updateEditLocationSummary() {
@@ -669,14 +697,6 @@ function openEditEntry(drinkId) {
     else { if (editLocationMarker) { editLocationMap.removeLayer(editLocationMarker); editLocationMarker=null; } editLocationMap.setView([40.2,-3.7],5); }
   }));
 }
-function spreadMarkerCoordinates(location, occurrences) {
-  const key = `${location.latitude.toFixed(5)}|${location.longitude.toFixed(5)}`;
-  const index = occurrences.get(key) || 0; occurrences.set(key,index + 1);
-  if (!index) return [location.latitude,location.longitude];
-  const ring = Math.ceil(index / 7); const angle = index * 2.39996; const latitudeOffset = .000035 * ring;
-  const longitudeOffset = latitudeOffset / Math.max(Math.cos(location.latitude * Math.PI / 180), .35);
-  return [location.latitude + Math.sin(angle) * latitudeOffset,location.longitude + Math.cos(angle) * longitudeOffset];
-}
 function renderLocationMap({fit=true} = {}) {
   renderMapFormatFilters();
   const allLocated = periodLocatedDrinks();
@@ -698,14 +718,18 @@ function renderLocationMap({fit=true} = {}) {
   }
   beerMap.invalidateSize({animate:false,pan:false});
   requestAnimationFrame(() => beerMap?.invalidateSize({animate:false,pan:false}));
-  const points = located.map((drink) => { const location = sanitizeLocation(drink.location); return [location.latitude,location.longitude,1]; });
+  const locationClusters = clusterLocatedDrinks(located);
+  const points = locationClusters.flatMap((cluster) => cluster.drinks.map(() => [cluster.latitude,cluster.longitude,1]));
   beerHeatLayer.setLatLngs(points); beerPointLayer.clearLayers();
-  const occurrences = new Map();
-  if (!heatOnly) located.forEach((drink) => {
-    const location = sanitizeLocation(drink.location); const date = new Date(drink.date);
-    const title = location.name || "Punto registrado"; const source = FORMAT_ICON_PATHS[drink.type] || "icon.svg";
-    const detail = `<div class="map-popup-head"><img src="${source}" alt="" /><div><strong>${escapeHtml(drink.type)}</strong><small>${drink.volume} ml · ${escapeHtml(title)}</small></div></div><p>${new Intl.DateTimeFormat("es-ES",{day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"}).format(date)}</p>`;
-    L.marker(spreadMarkerCoordinates(location,occurrences), {icon:beerMapMarkerIcon(drink.type),title:`${drink.type} · ${drink.volume} ml`}).bindPopup(detail).addTo(beerPointLayer);
+  if (!heatOnly) locationClusters.forEach((cluster) => {
+    const ordered = [...cluster.drinks].sort((a,b) => new Date(b.date) - new Date(a.date)); const latest = ordered[0];
+    const latestDate = new Date(latest.date); const source = FORMAT_ICON_PATHS[latest.type] || "icon.svg";
+    const title = [...cluster.names.entries()].sort((a,b) => b[1] - a[1])[0]?.[0] || "Punto registrado";
+    const formats = [...ordered.reduce((counts,drink) => counts.set(drink.type,(counts.get(drink.type) || 0) + 1),new Map()).entries()]
+      .sort((a,b) => b[1] - a[1] || a[0].localeCompare(b[0],"es"))
+      .map(([type,count]) => `${count} ${escapeHtml(type)}`).join(" · ");
+    const detail = `<div class="map-popup-head"><img src="${source}" alt="" /><div><strong>${ordered.length === 1 ? escapeHtml(latest.type) : `${ordered.length} birras`}</strong><small>${escapeHtml(title)}</small></div></div><p>${formats}${ordered.length > 1 ? `<br>Última: ${new Intl.DateTimeFormat("es-ES",{day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"}).format(latestDate)}` : `<br>${latest.volume} ml · ${new Intl.DateTimeFormat("es-ES",{day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"}).format(latestDate)}`}</p>`;
+    L.marker([cluster.latitude,cluster.longitude], {icon:beerMapMarkerIcon(latest.type,ordered.length),title:`${ordered.length} ${ordered.length === 1 ? "birra" : "birras"} · ${title}`}).bindPopup(detail).addTo(beerPointLayer);
   });
   empty.hidden = located.length > 0;
   if (!located.length) {
@@ -798,10 +822,12 @@ function beginAutomaticLocationCapture() {
   }
   locationRequest = new Promise((resolve) => {
     const onSuccess = (position) => {
-      const location = sanitizeLocation({latitude:position.coords.latitude,longitude:position.coords.longitude,accuracy:position.coords.accuracy});
+      const measuredLocation = sanitizeLocation({latitude:position.coords.latitude,longitude:position.coords.longitude,accuracy:position.coords.accuracy});
+      const location = snapLocationToNearby(measuredLocation);
+      const grouped = locationDistanceMeters(measuredLocation,location) > 1;
       if (captureSequence === locationCaptureSequence) {
         pendingLocation = location;
-        $("#add-dialog-copy").textContent = `Día, hora y ubicación preparados automáticamente${location?.accuracy ? ` · precisión aproximada ${location.accuracy} m` : ""}.`;
+        $("#add-dialog-copy").textContent = grouped ? "Día y hora preparados · ubicación agrupada con una zona cercana." : `Día, hora y ubicación preparados automáticamente${location?.accuracy ? ` · precisión aproximada ${location.accuracy} m` : ""}.`;
       }
       resolve(location);
     };
@@ -853,7 +879,9 @@ $("#edit-use-current-location").addEventListener("click", () => {
   button.disabled = true; $("#edit-location-status").textContent = "Buscando tu ubicación actual…";
   navigator.geolocation.getCurrentPosition((position) => {
     button.disabled = false;
-    setEditLocation({latitude:position.coords.latitude,longitude:position.coords.longitude,accuracy:position.coords.accuracy,name:$("#edit-location-name").value},{center:true});
+    const measuredLocation = {latitude:position.coords.latitude,longitude:position.coords.longitude,accuracy:position.coords.accuracy,name:$("#edit-location-name").value};
+    const location = snapLocationToNearby(measuredLocation,editingDrinkId);
+    setEditLocation(location,{center:true});
     $("#edit-location-status").textContent = `Ubicación actual preparada${position.coords.accuracy ? ` · precisión aproximada ${Math.round(position.coords.accuracy)} m` : ""}.`;
   }, (error) => {
     button.disabled = false;

@@ -464,6 +464,7 @@ input, select { display: block; width: 100%; margin-top: 7px; padding: 13px 14px
 .beer-map-marker > span { position: relative; display: block; width: 46px; height: 46px; padding: 3px; border: 3px solid white; border-radius: 15px; background: white; box-shadow: 0 7px 18px rgba(23,24,18,.28); }
 .beer-map-marker > span::after { content: ""; position: absolute; z-index: -1; left: 50%; bottom: -5px; width: 12px; height: 12px; border-radius: 2px; background: white; transform: translateX(-50%) rotate(45deg); }
 .beer-map-marker img { display: block; width: 100%; height: 100%; border-radius: 10px; object-fit: cover; }
+.beer-map-marker b { position: absolute; right: -8px; top: -8px; min-width: 23px; height: 23px; padding: 0 5px; display: grid; place-items: center; border: 2px solid white; border-radius: 999px; background: var(--ink); color: var(--amber); font: 800 9px/1 "Manrope"; box-shadow: 0 5px 11px rgba(23,24,18,.25); }
 .map-popup-head { display: grid; grid-template-columns: 45px 1fr; align-items: center; gap: 9px; }
 .map-popup-head img { width: 45px; height: 45px; border-radius: 11px; object-fit: cover; }
 .map-popup-head small { display: block; margin-top: 3px; color: var(--muted); font-size: 8px; }
