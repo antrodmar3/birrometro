@@ -122,6 +122,8 @@ let beerMapResizeObserver = null;
 let beerMapSignature = "";
 let favoriteMapZone = null;
 let favoriteZonePopup = null;
+let mapFullscreenPlaceholder = null;
+let mapFullscreenScrollY = 0;
 let editLocationMap = null;
 let editLocationMarker = null;
 let editingDrinkId = null;
@@ -534,12 +536,31 @@ function renderLocationStats(located, allLocated = periodLocatedDrinks()) {
 function setMapFullscreen(active) {
   const mapElement = $("#beer-map"); const button = $("#map-fullscreen-toggle");
   if (!mapElement || !button) return;
-  mapElement.classList.toggle("is-fullscreen",active);
+  const currentlyActive = mapElement.classList.contains("is-fullscreen");
+  if (active === currentlyActive) return;
+  if (active) {
+    const bounds = mapElement.getBoundingClientRect();
+    mapFullscreenPlaceholder = document.createElement("div");
+    mapFullscreenPlaceholder.className = "beer-map-placeholder";
+    mapFullscreenPlaceholder.style.height = `${bounds.height}px`;
+    mapElement.before(mapFullscreenPlaceholder);
+    mapFullscreenScrollY = window.scrollY;
+    document.body.appendChild(mapElement);
+    mapElement.classList.add("is-fullscreen");
+  } else {
+    mapElement.classList.remove("is-fullscreen");
+    if (mapFullscreenPlaceholder?.isConnected) mapFullscreenPlaceholder.replaceWith(mapElement);
+    mapFullscreenPlaceholder = null;
+  }
   document.body.classList.toggle("map-fullscreen-open",active);
+  document.documentElement.classList.toggle("map-fullscreen-open",active);
   button.setAttribute("aria-pressed",String(active));
   button.setAttribute("aria-label",active ? "Cerrar mapa a pantalla completa" : "Abrir mapa a pantalla completa");
   button.querySelector("span").textContent = active ? "Cerrar" : "Ampliar";
-  requestAnimationFrame(() => requestAnimationFrame(() => beerMap?.invalidateSize({animate:false,pan:false})));
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    beerMap?.invalidateSize({animate:false,pan:false});
+    if (!active) window.scrollTo(0,mapFullscreenScrollY);
+  }));
 }
 function focusFavoriteMapZone() {
   if (!favoriteMapZone || !ensureBeerMap()) return;

@@ -491,7 +491,8 @@ input, select { display: block; width: 100%; margin-top: 7px; padding: 13px 14px
 .favorite-zone-popup small, .favorite-zone-popup strong, .favorite-zone-popup span { display: block; }
 .favorite-zone-popup small { margin-bottom: 3px; color: #946305; font-size: 7px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
 .favorite-zone-popup span { margin-top: 4px; color: var(--muted); font-size: 8px; }
-body.map-fullscreen-open { overflow: hidden; overscroll-behavior: none; }
+html.map-fullscreen-open, body.map-fullscreen-open { overflow: hidden; overscroll-behavior: none; }
+.beer-map-placeholder { width: 100%; border-radius: 20px; background: #e8e4d7; }
 .beer-map.is-fullscreen { position: fixed; z-index: 5000; inset: 0; width: 100vw; height: 100dvh; border: 0; border-radius: 0; filter: none !important; }
 .beer-map.is-fullscreen .map-tools { top: max(12px,env(safe-area-inset-top)); right: max(12px,env(safe-area-inset-right)); }
 .beer-map.is-fullscreen .map-filter-panel { max-height: calc(100dvh - 84px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); }
