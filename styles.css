@@ -444,7 +444,7 @@ input, select { display: block; width: 100%; margin-top: 7px; padding: 13px 14px
 .map-filter-toggle b { min-width: 34px; padding: 5px 6px; border-radius: 8px; background: var(--ink); color: white; font-size: 8px; text-align: center; }
 .map-filter-panel { position: absolute; top: 49px; right: 0; width: min(330px, calc(100vw - 66px)); max-height: 334px; padding: 13px; overflow-y: auto; border: 1px solid rgba(23,24,18,.12); border-radius: 17px; background: rgba(255,254,250,.98); box-shadow: 0 18px 42px rgba(23,24,18,.22); backdrop-filter: blur(15px); }
 .map-period { margin: 0 0 12px; display: grid; grid-template-columns: 1fr 120px; align-items: center; gap: 10px; color: var(--muted); font-size: 8px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
-.map-period select { height: 36px; margin: 0; padding: 0 28px 0 11px; border-radius: 10px; background-color: var(--paper); font-size: 9px; font-weight: 800; text-transform: none; letter-spacing: 0; }
+.map-period .app-select { margin: 0; text-transform: none; letter-spacing: 0; }
 .map-filter-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; }
 .map-filter-heading strong, .map-filter-heading small { display: block; }
 .map-filter-heading strong { font: 800 14px "Fraunces"; }
@@ -831,6 +831,64 @@ dialog, .confirm-dialog, .beer-detail-dialog { border: 1px solid rgba(23,24,17,.
 dialog::backdrop, .confirm-dialog::backdrop, .beer-detail-dialog::backdrop { background: rgba(23,24,17,.66); }
 .dialog-head h2, .confirm-panel h2, .beer-detail-heading h2 { color: var(--ink); font-weight: 700; }
 input, select { border-color: rgba(23,24,17,.14); background: rgba(255,249,234,.86); }
+.app-select { position: relative; margin-top: 7px; color: var(--ink); font-family: "Manrope",sans-serif; text-transform: none; letter-spacing: 0; }
+.app-select-trigger { width: 100%; min-height: 64px; display: grid; grid-template-columns: 42px minmax(0,1fr) 24px; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid rgba(23,24,17,.14); border-radius: 16px; background: rgba(255,249,234,.9); color: var(--ink); text-align: left; cursor: pointer; box-shadow: 0 5px 18px rgba(47,39,20,.06); -webkit-tap-highlight-color: transparent; }
+.app-select-trigger:hover, .app-select.is-open .app-select-trigger { border-color: #d79615; background: #fff5da; }
+.app-select-trigger:focus-visible { outline: 3px solid rgba(255,178,15,.3); outline-offset: 2px; }
+.app-select-trigger img, .app-select-menu img { width: 42px; height: 42px; object-fit: contain; }
+.app-select-trigger > span:not(.app-select-symbol), .app-select-menu button > span { min-width: 0; display: grid; gap: 2px; }
+.app-select-trigger strong, .app-select-menu strong { overflow: hidden; color: var(--ink); font-size: 12px; font-weight: 800; line-height: 1.2; text-overflow: ellipsis; white-space: nowrap; }
+.app-select-trigger small, .app-select-menu small { overflow: hidden; color: var(--muted); font-size: 8px; font-weight: 600; line-height: 1.35; text-overflow: ellipsis; white-space: nowrap; }
+.app-select-trigger > i { color: #7a735f; font-size: 22px; font-style: normal; text-align: center; transition: transform .18s ease; }
+.app-select.is-open .app-select-trigger > i { transform: rotate(180deg); }
+.app-select-symbol { width: 39px; height: 39px; display: grid; place-items: center; border-radius: 12px; background: rgba(255,178,15,.18); color: #70480a; font-size: 18px; }
+.app-select-menu { max-height: 252px; margin-top: 7px; padding: 6px; overflow-y: auto; overscroll-behavior: contain; border: 1px solid rgba(23,24,17,.13); border-radius: 17px; background: #fffaf0; box-shadow: 0 18px 42px rgba(47,39,20,.16); scrollbar-color: #d9bd76 transparent; }
+.app-select-menu[hidden] { display: none; }
+.app-select-menu button { width: 100%; min-height: 54px; display: grid; grid-template-columns: 38px minmax(0,1fr) 24px; align-items: center; gap: 10px; padding: 6px 9px; border: 0; border-radius: 12px; background: transparent; text-align: left; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.app-select-menu button:hover, .app-select-menu button:focus-visible { outline: 0; background: #f2ead8; }
+.app-select-menu button.is-selected { background: #ffedb9; }
+.app-select-menu button img { width: 36px; height: 36px; }
+.app-select-menu button > b { opacity: 0; color: #6b480d; font-size: 14px; text-align: center; }
+.app-select-menu button.is-selected > b { opacity: 1; }
+.app-select--compact .app-select-trigger { min-height: 40px; grid-template-columns: 27px minmax(0,1fr) 17px; gap: 7px; padding: 5px 7px; border-radius: 11px; box-shadow: none; }
+.app-select--compact .app-select-trigger .app-select-symbol { width: 27px; height: 27px; border-radius: 8px; font-size: 13px; }
+.app-select--compact .app-select-trigger strong { font-size: 9px; }
+.app-select--compact .app-select-trigger small { display: none; }
+.app-select--compact .app-select-trigger > i { font-size: 16px; }
+.app-select--compact .app-select-menu { position: absolute; z-index: 900; right: 0; width: 210px; }
+.app-select--compact .app-select-menu button { grid-template-columns: 29px minmax(0,1fr) 20px; }
+.app-select--compact .app-select-menu .app-select-symbol { width: 27px; height: 27px; border-radius: 8px; font-size: 13px; }
+.app-datetime-trigger { width: 100%; min-height: 64px; margin-top: 7px; display: grid; grid-template-columns: 42px minmax(0,1fr) 24px; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid rgba(23,24,17,.14); border-radius: 16px; background: rgba(255,249,234,.9); color: var(--ink); text-align: left; cursor: pointer; box-shadow: 0 5px 18px rgba(47,39,20,.06); -webkit-tap-highlight-color: transparent; }
+.app-datetime-trigger:hover { border-color: #d79615; background: #fff5da; }
+.app-datetime-trigger:focus-visible { outline: 3px solid rgba(255,178,15,.3); outline-offset: 2px; }
+.app-datetime-trigger svg { width: 42px; height: 42px; padding: 10px; border-radius: 13px; background: rgba(255,178,15,.2); fill: none; stroke: #714909; stroke-width: 1.8; }
+.app-datetime-trigger > span { min-width: 0; display: grid; gap: 3px; }
+.app-datetime-trigger strong { overflow: hidden; font-size: 12px; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+.app-datetime-trigger small { color: var(--muted); font-size: 9px; font-weight: 600; }
+.app-datetime-trigger i { color: #7a735f; font-size: 23px; font-style: normal; text-align: center; }
+.datetime-dialog { width: min(440px,calc(100% - 28px)); }
+.datetime-panel { padding: 27px; }
+.calendar-head { display: grid; grid-template-columns: 43px 1fr 43px; align-items: center; gap: 8px; margin-bottom: 14px; }
+.calendar-head strong { color: var(--ink); font: 700 20px/1.2 "Fraunces",sans-serif; text-align: center; text-transform: capitalize; }
+.calendar-head button { width: 43px; height: 43px; border: 1px solid rgba(23,24,17,.11); border-radius: 13px; background: #f2ead8; color: var(--ink); font-size: 24px; cursor: pointer; }
+.calendar-head button:hover { background: #ffe7a6; }
+.calendar-weekdays, .calendar-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 4px; }
+.calendar-weekdays { margin-bottom: 5px; }
+.calendar-weekdays span { padding: 4px 0; color: var(--muted); font-size: 8px; font-weight: 800; text-align: center; }
+.calendar-grid button, .calendar-blank { aspect-ratio: 1; min-width: 0; }
+.calendar-grid button { position: relative; border: 0; border-radius: 12px; background: transparent; color: var(--ink); font-size: 11px; font-weight: 750; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.calendar-grid button:hover, .calendar-grid button:focus-visible { outline: 0; background: #f0e7d4; }
+.calendar-grid button.is-today::after { content: ""; position: absolute; left: 50%; bottom: 4px; width: 4px; height: 4px; border-radius: 50%; background: var(--orange); transform: translateX(-50%); }
+.calendar-grid button.is-selected { background: var(--amber); color: #1a160e; box-shadow: 0 5px 13px rgba(184,116,5,.23); }
+.calendar-grid button.is-selected::after { background: #1a160e; }
+.calendar-time { margin-top: 18px; display: grid; grid-template-columns: minmax(0,1fr) 66px 8px 66px; align-items: end; gap: 7px; padding: 13px; border-radius: 17px; background: #f2ead8; }
+.calendar-time > span { align-self: center; display: flex; align-items: center; gap: 8px; color: var(--ink); font-size: 10px; font-weight: 800; }
+.calendar-time > span svg { width: 23px; height: 23px; fill: none; stroke: #714909; stroke-width: 1.8; }
+.calendar-time label { color: var(--muted); font-size: 7px; font-weight: 800; text-align: center; }
+.calendar-time input { height: 43px; margin: 3px 0 0; padding: 4px; border: 1px solid rgba(23,24,17,.12); border-radius: 11px; background: #fffaf0; color: var(--ink); font-size: 17px; font-weight: 800; text-align: center; appearance: textfield; }
+.calendar-time input::-webkit-inner-spin-button, .calendar-time input::-webkit-outer-spin-button { margin: 0; appearance: none; }
+.calendar-time > b { align-self: center; padding-top: 9px; }
+.calendar-confirm { min-height: 48px; border: 0; border-radius: 13px; background: var(--ink); color: var(--amber); font-size: 10px; font-weight: 800; cursor: pointer; }
 .primary-button { border-radius: 16px; background: var(--ink); color: var(--amber); }
 .size-option { border-color: rgba(23,24,17,.11); border-radius: 18px; background: rgba(255,249,234,.8); }
 .size-option:hover { border-color: #d79615; background: #fff2cb; }

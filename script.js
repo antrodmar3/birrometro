@@ -412,6 +412,112 @@ function localDateTime(date = new Date()) {
   const offset = date.getTimezoneOffset();
   return new Date(date.getTime() - offset * 60000).toISOString().slice(0,16);
 }
+function formatMenuOptions() {
+  return [...document.querySelectorAll(".size-option")].map((button) => ({
+    value:`${button.dataset.volume}|${button.dataset.type}|${button.dataset.abv ?? 5}`,
+    label:button.dataset.type,
+    detail:button.querySelector("small")?.textContent?.trim() || `${button.dataset.volume} ml`,
+    icon:button.querySelector("img")?.getAttribute("src") || FORMAT_ICON_PATHS[button.dataset.type] || "icon.svg"
+  }));
+}
+const periodMenuOptions = [
+  {value:"all",label:"Todo el tiempo",detail:"Todas tus ubicaciones"},
+  {value:"year",label:"Este año",detail:"Desde enero hasta hoy"},
+  {value:"month",label:"Este mes",detail:"Solo el mes actual"}
+];
+function closeAppSelects(except = null) {
+  document.querySelectorAll(".app-select.is-open").forEach((root) => {
+    if (root === except) return;
+    root.classList.remove("is-open");
+    root.querySelector(".app-select-trigger")?.setAttribute("aria-expanded", "false");
+    const menu = root.querySelector(".app-select-menu"); if (menu) menu.hidden = true;
+  });
+}
+function syncAppSelect(root, value) {
+  if (!root) return;
+  const input = root.querySelector('input[type="hidden"]');
+  const trigger = root.querySelector(".app-select-trigger");
+  const option = root._appSelectOptions?.find((item) => item.value === value) || root._appSelectOptions?.[0];
+  if (!input || !trigger || !option) return;
+  input.value = option.value;
+  trigger.innerHTML = `${option.icon ? `<img src="${escapeHtml(option.icon)}" alt="" />` : `<span class="app-select-symbol" aria-hidden="true">${root.dataset.selectKind === "period" ? "◷" : "🍺"}</span>`}<span><strong>${escapeHtml(option.label)}</strong><small>${escapeHtml(option.detail || "")}</small></span><i aria-hidden="true">⌄</i>`;
+  root.querySelectorAll("[data-select-value]").forEach((button) => {
+    const selected = button.dataset.selectValue === option.value;
+    button.classList.toggle("is-selected", selected);
+    button.setAttribute("aria-selected", String(selected));
+  });
+}
+function setAppSelectValue(rootId, value, emit = false) {
+  const root = typeof rootId === "string" ? document.getElementById(rootId) : rootId;
+  if (!root) return;
+  syncAppSelect(root, value);
+  if (emit) root.querySelector('input[type="hidden"]')?.dispatchEvent(new Event("change", {bubbles:true}));
+}
+function setupAppSelect(root, options) {
+  if (!root) return;
+  root._appSelectOptions = options;
+  const input = root.querySelector('input[type="hidden"]');
+  const trigger = root.querySelector(".app-select-trigger");
+  const menu = root.querySelector(".app-select-menu");
+  menu.innerHTML = options.map((option) => `<button type="button" role="option" data-select-value="${escapeHtml(option.value)}">${option.icon ? `<img src="${escapeHtml(option.icon)}" alt="" />` : `<span class="app-select-symbol" aria-hidden="true">◷</span>`}<span><strong>${escapeHtml(option.label)}</strong><small>${escapeHtml(option.detail || "")}</small></span><b aria-hidden="true">✓</b></button>`).join("");
+  syncAppSelect(root, input.value);
+  trigger.addEventListener("click", () => {
+    const opening = !root.classList.contains("is-open");
+    closeAppSelects(root);
+    root.classList.toggle("is-open", opening); menu.hidden = !opening;
+    trigger.setAttribute("aria-expanded", String(opening));
+    if (opening) menu.querySelector(".is-selected")?.scrollIntoView({block:"nearest"});
+  });
+  menu.addEventListener("click", (event) => {
+    const option = event.target.closest("[data-select-value]"); if (!option) return;
+    syncAppSelect(root, option.dataset.selectValue); closeAppSelects();
+    input.dispatchEvent(new Event("change", {bubbles:true})); trigger.focus();
+  });
+  trigger.addEventListener("keydown", (event) => {
+    if (!["ArrowDown","ArrowUp","Home","End"].includes(event.key)) return;
+    event.preventDefault();
+    const current = options.findIndex((item) => item.value === input.value);
+    const next = event.key === "Home" ? 0 : event.key === "End" ? options.length - 1 : (current + (event.key === "ArrowDown" ? 1 : -1) + options.length) % options.length;
+    syncAppSelect(root, options[next].value); input.dispatchEvent(new Event("change", {bubbles:true}));
+  });
+}
+let activeDateTimeInputId = null;
+let calendarCursor = new Date();
+let calendarSelection = new Date();
+function parsedLocalDateTime(value) {
+  const parsed = value ? new Date(value) : new Date();
+  return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+}
+function updateDateTimeTrigger(inputId) {
+  const input = document.getElementById(inputId);
+  const trigger = document.querySelector(`[data-datetime-for="${inputId}"]`);
+  if (!input || !trigger) return;
+  const hasValue = Boolean(input.value); const date = parsedLocalDateTime(input.value);
+  trigger.querySelector("strong").textContent = hasValue ? new Intl.DateTimeFormat("es-ES", {weekday:"short",day:"numeric",month:"short",year:"numeric"}).format(date) : "Seleccionar momento";
+  trigger.querySelector("small").textContent = hasValue ? new Intl.DateTimeFormat("es-ES", {hour:"2-digit",minute:"2-digit"}).format(date) : "Fecha y hora";
+}
+function renderCalendar() {
+  const month = new Date(calendarCursor.getFullYear(), calendarCursor.getMonth(), 1);
+  $("#calendar-month").textContent = new Intl.DateTimeFormat("es-ES", {month:"long",year:"numeric"}).format(month);
+  const leading = (month.getDay() + 6) % 7;
+  const days = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
+  const today = new Date(); let html = "";
+  for (let index = 0; index < leading; index += 1) html += '<span class="calendar-blank" aria-hidden="true"></span>';
+  for (let day = 1; day <= days; day += 1) {
+    const isSelected = day === calendarSelection.getDate() && month.getMonth() === calendarSelection.getMonth() && month.getFullYear() === calendarSelection.getFullYear();
+    const isToday = day === today.getDate() && month.getMonth() === today.getMonth() && month.getFullYear() === today.getFullYear();
+    html += `<button type="button" role="gridcell" data-calendar-day="${day}" class="${isSelected ? "is-selected" : ""} ${isToday ? "is-today" : ""}" aria-selected="${isSelected}">${day}</button>`;
+  }
+  $("#calendar-grid").innerHTML = html;
+}
+function openDateTimeDialog(inputId) {
+  activeDateTimeInputId = inputId;
+  calendarSelection = parsedLocalDateTime(document.getElementById(inputId)?.value);
+  calendarCursor = new Date(calendarSelection.getFullYear(), calendarSelection.getMonth(), 1);
+  $("#calendar-hour").value = String(calendarSelection.getHours()).padStart(2,"0");
+  $("#calendar-minute").value = String(calendarSelection.getMinutes()).padStart(2,"0");
+  renderCalendar(); $("#datetime-dialog").showModal();
+}
 function dayKey(date) {
   const d = new Date(date); return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
 }
@@ -764,8 +870,9 @@ function openEditEntry(drinkId) {
   const drink = state.drinks.find((entry) => entry.id === drinkId); if (!drink) return;
   editingDrinkId = drink.id;
   $("#edit-entry-date").value = localDateTime(new Date(drink.date));
-  const option = [...$("#edit-entry-format").options].find((item) => item.value.split("|")[1] === drink.type);
-  if (option) $("#edit-entry-format").value = option.value;
+  updateDateTimeTrigger("edit-entry-date");
+  const option = formatMenuOptions().find((item) => item.value.split("|")[1] === drink.type);
+  if (option) setAppSelectValue("edit-format-select", option.value);
   pendingEditLocation = sanitizeLocation(drink.location);
   $("#edit-location-name").value = pendingEditLocation?.name || "";
   $("#edit-location-status").textContent = pendingEditLocation ? "Arrastra el punto o toca el mapa para cambiarlo." : "Toca el mapa para colocar el punto o usa tu ubicación actual.";
@@ -929,6 +1036,27 @@ function beginAutomaticLocationCapture() {
   return locationRequest;
 }
 function openAddDialog() { els.addDialog.showModal(); beginAutomaticLocationCapture(); }
+setupAppSelect($("#location-period-select"), periodMenuOptions);
+setupAppSelect($("#late-format-select"), formatMenuOptions());
+setupAppSelect($("#edit-format-select"), formatMenuOptions());
+document.querySelectorAll(".app-datetime-trigger").forEach((button) => button.addEventListener("click", () => openDateTimeDialog(button.dataset.datetimeFor)));
+document.addEventListener("click", (event) => { if (!event.target.closest(".app-select")) closeAppSelects(); });
+document.addEventListener("keydown", (event) => { if (event.key === "Escape") closeAppSelects(); });
+$("#calendar-prev").addEventListener("click", () => { calendarCursor = new Date(calendarCursor.getFullYear(), calendarCursor.getMonth() - 1, 1); renderCalendar(); });
+$("#calendar-next").addEventListener("click", () => { calendarCursor = new Date(calendarCursor.getFullYear(), calendarCursor.getMonth() + 1, 1); renderCalendar(); });
+$("#calendar-grid").addEventListener("click", (event) => {
+  const day = event.target.closest("[data-calendar-day]"); if (!day) return;
+  calendarSelection.setFullYear(calendarCursor.getFullYear(), calendarCursor.getMonth(), Number(day.dataset.calendarDay)); renderCalendar();
+});
+$("#calendar-confirm").addEventListener("click", () => {
+  if (!activeDateTimeInputId) return;
+  const hour = Math.min(23, Math.max(0, Number($("#calendar-hour").value) || 0));
+  const minute = Math.min(59, Math.max(0, Number($("#calendar-minute").value) || 0));
+  calendarSelection.setHours(hour, minute, 0, 0);
+  const input = document.getElementById(activeDateTimeInputId); input.value = localDateTime(calendarSelection);
+  updateDateTimeTrigger(activeDateTimeInputId); input.dispatchEvent(new Event("change", {bubbles:true}));
+  $("#datetime-dialog").close();
+});
 $("#open-add").addEventListener("click", openAddDialog);
 $("#floating-add").addEventListener("click", openAddDialog);
 $("#open-more").addEventListener("click", () => els.moreDialog.showModal());
@@ -946,10 +1074,11 @@ document.querySelectorAll(".size-option").forEach((button) => button.addEventLis
   showToast(`${button.dataset.type} añadida · ${new Intl.DateTimeFormat("es-ES", {hour:"2-digit", minute:"2-digit"}).format(addedAt)}${location ? " · ubicación guardada" : " · sin ubicación"}`);
   maybeShowDriverAlert(addedDrink);
 }));
-$("#open-late").addEventListener("click", () => { els.moreDialog.close(); $("#late-date").value = localDateTime(); els.lateDialog.showModal(); });
+$("#open-late").addEventListener("click", () => { els.moreDialog.close(); $("#late-date").value = localDateTime(); updateDateTimeTrigger("late-date"); els.lateDialog.showModal(); });
 $("#late-form").addEventListener("submit", (event) => {
   event.preventDefault(); const data = new FormData(event.currentTarget); const [volume, type, abv = "5"] = String(data.get("format")).split("|");
-  const addedDrink = { id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), volume:Number(volume), type, abv:Number(abv), date:new Date(String(data.get("date"))).toISOString(), note:"" };
+  const addedDate = new Date(String(data.get("date"))); if (Number.isNaN(addedDate.getTime())) { showToast("Selecciona la fecha y la hora"); return; }
+  const addedDrink = { id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), volume:Number(volume), type, abv:Number(abv), date:addedDate.toISOString(), note:"" };
   state.drinks.push(addedDrink);
   if (navigator.vibrate) navigator.vibrate(18);
   save(); render(); els.lateDialog.close(); showToast("Cerveza añadida al historial");
