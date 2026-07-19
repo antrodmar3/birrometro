@@ -109,6 +109,7 @@ const state = loadState();
 let activeUserId = null;
 let activeUserEmail = null;
 let volumeUnit = "L";
+const viewPeriods = {formats:"total",patterns:"total",insights:"total"};
 const beerCatalog = CLOSED_BEER_CATALOG;
 let albumFilter = "all";
 let groups = [];
@@ -417,6 +418,12 @@ function startOfWeek() { const d = startOfDay(); d.setDate(d.getDate() - ((d.get
 function startOfMonth() { const d = startOfDay(); d.setDate(1); return d; }
 function startOfYear() { const d = startOfDay(); d.setMonth(0, 1); return d; }
 function since(date) { return state.drinks.filter((drink) => new Date(drink.date) >= date); }
+function entriesInPeriod(entries, period = "total") {
+  const start = period === "day" ? startOfDay() : period === "week" ? startOfWeek() : period === "month" ? startOfMonth() : null;
+  if (!start) return [...entries];
+  const now = Date.now(); return entries.filter((entry) => { const time = new Date(entry.date).getTime(); return time >= start.getTime() && time <= now; });
+}
+function periodCopy(period) { return ({day:"hoy",week:"esta semana",month:"este mes",total:"en total"})[period] || "en total"; }
 function localDateTime(date = new Date()) {
   const offset = date.getTimezoneOffset();
   return new Date(date.getTime() - offset * 60000).toISOString().slice(0,16);
@@ -545,7 +552,8 @@ function renderBars(container, labels, values) {
 function renderPatterns() {
   const weekdayValues = [0,0,0,0,0,0,0];
   const hourValues = Array(24).fill(0);
-  state.drinks.forEach((drink) => {
+  const entries = entriesInPeriod(state.drinks,viewPeriods.patterns);
+  entries.forEach((drink) => {
     const date = new Date(drink.date); weekdayValues[(date.getDay() + 6) % 7] += 1;
     hourValues[date.getHours()] += 1;
   });
@@ -568,10 +576,10 @@ function renderVolumes(today, week, month) {
   $("#volume-historical-note").hidden = !state.historical.length;
 }
 const FORMAT_COLORS = ["#ffb20f", "#d96a32", "#68725d", "#a97b32", "#4f5949", "#e5a13a", "#8d4f2b", "#b3a36e", "#334037", "#c67c52", "#7b6b48", "#e0b557"];
-function formatEntries() { return [...state.drinks,...state.historical]; }
-function getFormatStats() {
+function formatEntries(period = "total") { return entriesInPeriod([...state.drinks,...state.historical],period); }
+function getFormatStats(entries = formatEntries()) {
   const stats = new Map();
-  formatEntries().forEach((drink) => {
+  entries.forEach((drink) => {
     const current = stats.get(drink.type) || {type:drink.type, count:0, volume:0};
     current.count += 1; current.volume += Number(drink.volume || 0); stats.set(drink.type, current);
   });
@@ -607,13 +615,12 @@ function reorderFormatOptions() {
     .forEach((option) => container.appendChild(option));
 }
 function renderFormatStats() {
-  const entries = formatEntries(); const formats = getFormatStats(); const total = entries.length || 1;
+  const entries = formatEntries(viewPeriods.formats); const formats = getFormatStats(entries); const total = entries.length || 1;
   const percentages = allocateFormatPercentages(formats, entries.length);
-  $("#formats-total").textContent = `${entries.length} en formatos`;
+  $("#formats-total").textContent = `${entries.length} ${periodCopy(viewPeriods.formats)}`;
   $("#formats-historical-note").hidden = !state.historical.length;
   const favorite = formats[0]; const favoritePercent = favorite ? percentages.get(favorite.type) : 0;
   $("#favorite-percent").textContent = `${favoritePercent}%`; $("#favorite-format").textContent = favorite?.type || "Sin datos";
-  $("#insight-favorite").textContent = favorite?.type || "—";
   let cursor = 0;
   const svg = $("#format-donut svg");
   svg.innerHTML = `<circle class="donut-track" cx="60" cy="60" r="48" pathLength="100"></circle>` + formats.map((format,index) => {
@@ -635,14 +642,22 @@ function renderFormatStats() {
   }).join("");
 }
 function renderInsights() {
-  const dayCounts = [0,0,0,0,0,0,0]; state.drinks.forEach((drink) => dayCounts[new Date(drink.date).getDay()] += 1);
+  const preciseEntries = entriesInPeriod(state.drinks,viewPeriods.insights);
+  const combinedEntries = formatEntries(viewPeriods.insights);
+  const favorite = getFormatStats(combinedEntries)[0];
+  $("#insight-favorite").textContent = favorite?.type || "—";
+  const dayCounts = [0,0,0,0,0,0,0]; preciseEntries.forEach((drink) => dayCounts[new Date(drink.date).getDay()] += 1);
   const maxDay = Math.max(...dayCounts); const activeDay = maxDay ? dayCounts.indexOf(maxDay) : -1;
   $("#insight-day").textContent = activeDay >= 0 ? ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"][activeDay] : "—";
-  const firstDate = state.drinks.length ? Math.min(...state.drinks.map((drink) => new Date(drink.date).getTime())) : Date.now();
-  const elapsedWeeks = Math.max((Date.now() - firstDate) / 604800000, 1); $("#insight-average").textContent = `${(state.drinks.length / elapsedWeeks).toFixed(1)} / sem.`;
-  const months = []; const now = new Date();
-  for (let offset = 5; offset >= 0; offset -= 1) { const date = new Date(now.getFullYear(), now.getMonth() - offset, 1); months.push({year:date.getFullYear(),month:date.getMonth(),label:new Intl.DateTimeFormat("es-ES",{month:"short"}).format(date).replace(".",""),count:0}); }
-  state.drinks.forEach((drink) => { const date = new Date(drink.date); const month = months.find((item) => item.year === date.getFullYear() && item.month === date.getMonth()); if (month) month.count += 1; });
+  $("#insight-average").textContent = String(combinedEntries.length);
+  $("#insight-count-label").textContent = `Consumos ${periodCopy(viewPeriods.insights)}`;
+  const allEntries = formatEntries(); const now = new Date(); const validTimes = allEntries.map((drink) => new Date(drink.date).getTime()).filter(Number.isFinite);
+  const earliest = validTimes.length ? new Date(Math.min(...validTimes)) : new Date(now.getFullYear(),now.getMonth(),1);
+  const earliestMonth = new Date(earliest.getFullYear(),earliest.getMonth(),1); const twelveMonthWindow = new Date(now.getFullYear(),now.getMonth() - 11,1);
+  const firstMonth = earliestMonth < twelveMonthWindow ? twelveMonthWindow : earliestMonth;
+  const months = []; const cursor = new Date(firstMonth);
+  while (cursor <= now && months.length < 12) { months.push({year:cursor.getFullYear(),month:cursor.getMonth(),label:new Intl.DateTimeFormat("es-ES",{month:"short"}).format(cursor).replace(".",""),count:0}); cursor.setMonth(cursor.getMonth() + 1); }
+  allEntries.forEach((drink) => { const date = new Date(drink.date); const month = months.find((item) => item.year === date.getFullYear() && item.month === date.getMonth()); if (month) month.count += 1; });
   const max = Math.max(...months.map((month) => month.count),1); $("#trend-total").textContent = `${months.reduce((sum,month) => sum + month.count,0)} cervezas`;
   $("#trend-chart").innerHTML = months.map((month) => `<div class="trend-bar"><span>${month.count || ""}</span><i style="height:${Math.max(month.count / max * 100, month.count ? 12 : 3)}%"></i><small>${month.label}</small></div>`).join("");
 }
@@ -978,7 +993,8 @@ function render() {
   const currentYear = new Date().getFullYear();
   const year = state.drinks.filter((drink) => new Date(drink.date).getFullYear() === currentYear);
   const historicalYear = state.historical.filter((drink) => new Date(drink.date).getFullYear() === currentYear);
-  els.todayCount.textContent = today.length; els.yearCount.textContent = year.length + historicalYear.length;
+  const combinedYearCount = year.length + historicalYear.length;
+  els.todayCount.textContent = today.length; els.yearCount.textContent = combinedYearCount; $("#year-title").dataset.digits = String(combinedYearCount).length;
   $("#marker-year").textContent = currentYear;
   els.weekCount.textContent = week.length; els.monthCount.textContent = month.length;
   els.streak.textContent = currentStreak();
@@ -1076,6 +1092,15 @@ $("#floating-add").addEventListener("click", openAddDialog);
 $("#open-more").addEventListener("click", () => els.moreDialog.showModal());
 $("#open-settings").addEventListener("click", () => els.settingsDialog.showModal());
 $("#unit-toggle").addEventListener("click", () => { volumeUnit = volumeUnit === "L" ? "mL" : "L"; render(); });
+document.querySelectorAll("[data-period-control]").forEach((control) => control.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-period]"); if (!button) return;
+  const section = control.dataset.periodControl; viewPeriods[section] = button.dataset.period;
+  control.querySelectorAll("[data-period]").forEach((item) => { const active = item === button; item.classList.toggle("is-active",active); item.setAttribute("aria-pressed",String(active)); });
+  if (section === "formats") renderFormatStats();
+  if (section === "patterns") renderPatterns();
+  if (section === "insights") renderInsights();
+}));
+document.querySelectorAll("[data-period-control] [data-period]").forEach((button) => button.setAttribute("aria-pressed",String(button.classList.contains("is-active"))));
 document.querySelectorAll(".size-option").forEach((button) => button.addEventListener("click", async () => {
   const options = $(".size-options"); options.classList.add("is-locating");
   if (!pendingLocation) $("#add-dialog-copy").textContent = "Terminando de localizarte…";
