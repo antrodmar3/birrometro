@@ -139,6 +139,26 @@ const beerCatalogById = new Map(beerCatalog.map((beer) => [beer.id, beer]));
 const DRIVER_WINDOW_MS = 2 * 60 * 60 * 1000;
 const ETHANOL_DENSITY = 0.789;
 const LOCATION_SNAP_RADIUS_METERS = 60;
+const TELEGRAM_FORMAT_VOLUMES = Object.freeze({"Lata":330,"Lata gordita":330,"Copa":300,"Cortá":200,"Tercio":330,"Botellín":250,"Pinta":568,"Caña":200,"Grande":400,"Yonkilata":500});
+const TELEGRAM_SNAPSHOTS = Object.freeze([
+  ["2026-01-12",{"Cortá":3}], ["2026-01-13",{"Cortá":5}], ["2026-01-15",{"Lata":2}],
+  ["2026-01-16",{"Lata":5,"Cortá":8}], ["2026-01-17",{"Lata":10}], ["2026-01-18",{"Lata":14,"Cortá":8}],
+  ["2026-01-21",{"Lata":15}], ["2026-01-25",{"Lata":17}], ["2026-01-29",{"Lata":19,"Lata gordita":1,"Copa":1,"Cortá":8}],
+  ["2026-01-30",{"Lata":23,"Lata gordita":1,"Copa":1,"Cortá":9,"Tercio":3}],
+  ["2026-02-01",{"Lata":26,"Lata gordita":1,"Copa":3,"Cortá":9,"Tercio":3,"Botellín":2}],
+  ["2026-02-03",{"Lata":27,"Lata gordita":1,"Copa":3,"Cortá":11,"Tercio":3,"Botellín":2}],
+  ["2026-02-05",{"Lata":29}], ["2026-02-06",{"Lata gordita":2,"Pinta":2}], ["2026-02-08",{"Pinta":3}],
+  ["2026-02-12",{"Lata":31}], ["2026-02-13",{"Tercio":6}], ["2026-02-14",{"Cortá":14}],
+  ["2026-02-15",{"Lata":35}], ["2026-02-16",{"Lata":38}], ["2026-02-18",{"Lata":39,"Lata gordita":3,"Tercio":8}],
+  ["2026-02-19",{"Lata":40}], ["2026-02-21",{"Lata":43,"Copa":4,"Tercio":17,"Caña":4}], ["2026-02-25",{"Lata":44}],
+  ["2026-02-26",{"Cortá":20,"Tercio":19}], ["2026-02-28",{"Lata":46,"Caña":7}],
+  ["2026-03-10",{"Lata":58,"Cortá":23}], ["2026-03-14",{"Lata":60,"Cortá":25,"Grande":2}],
+  ["2026-03-16",{"Lata":62,"Cortá":26}], ["2026-03-18",{"Cortá":33}],
+  ["2026-03-21",{"Lata gordita":7,"Yonkilata":3}], ["2026-03-23",{"Lata gordita":9,"Cortá":38}],
+  ["2026-03-25",{"Lata":65}], ["2026-03-27",{"Cortá":44}], ["2026-03-29",{"Lata":69,"Cortá":46,"Grande":3}],
+  ["2026-03-30",{"Cortá":50}], ["2026-04-10",{"Lata":76,"Cortá":58}], ["2026-04-11",{"Cortá":63}],
+  ["2026-04-14",{"Lata":81,"Cortá":65,"Botellín":6}], ["2026-04-16",{"Copa":5,"Cortá":70}], ["2026-04-17",{"Lata":82}]
+]);
 function defaultDriverProfile() { return {enabled:true,weight:null,height:null}; }
 function sanitizeDriverProfile(value) {
   const weight = Number(value?.weight); const height = Number(value?.height);
@@ -167,20 +187,63 @@ const els = {
 };
 
 function loadState() {
-  return { drinks: [], imports: {}, album: [], driver:defaultDriverProfile() };
+  return { drinks: [], historical:[], imports: {}, album: [], driver:defaultDriverProfile() };
 }
 function userStorageKey(uid) { return `birrometro-user-${uid}`; }
 function readUserState(uid) {
   try {
     const saved = JSON.parse(localStorage.getItem(userStorageKey(uid)) || "{}");
-    return {drinks:Array.isArray(saved.drinks) ? saved.drinks : [],imports:saved.imports || {},album:sanitizeAlbum(saved.album),driver:sanitizeDriverProfile(saved.driver)};
-  } catch { return {drinks:[],imports:{},album:[],driver:defaultDriverProfile()}; }
+    return {drinks:Array.isArray(saved.drinks) ? saved.drinks : [],historical:sanitizeHistoricalEntries(saved.historical),imports:saved.imports || {},album:sanitizeAlbum(saved.album),driver:sanitizeDriverProfile(saved.driver)};
+  } catch { return {drinks:[],historical:[],imports:{},album:[],driver:defaultDriverProfile()}; }
 }
 function applyState(nextState) {
   state.drinks = Array.isArray(nextState?.drinks) ? nextState.drinks : [];
+  state.historical = sanitizeHistoricalEntries(nextState?.historical);
   state.imports = nextState?.imports || {};
   state.album = sanitizeAlbum(nextState?.album);
   state.driver = sanitizeDriverProfile(nextState?.driver);
+}
+function sanitizeHistoricalEntries(entries) {
+  return (Array.isArray(entries) ? entries : []).map((entry) => {
+    const type = String(entry?.type || ""); const volume = Number(entry?.volume); const date = new Date(entry?.date);
+    if (!TELEGRAM_FORMAT_VOLUMES[type] || volume !== TELEGRAM_FORMAT_VOLUMES[type] || Number.isNaN(date.getTime())) return null;
+    return {id:String(entry.id || ""),type,volume,date:date.toISOString(),source:"telegram",estimated:Boolean(entry.estimated)};
+  }).filter(Boolean);
+}
+function dateDifferenceDays(first, second) { return Math.round((Date.parse(`${second}T12:00:00Z`) - Date.parse(`${first}T12:00:00Z`)) / 86400000); }
+function dateWithOffset(date, offset) { const value = new Date(`${date}T12:00:00Z`); value.setUTCDate(value.getUTCDate() + offset); return value.toISOString(); }
+function evenlyOrderedFormats(deltas) {
+  const used = new Map(Object.keys(deltas).map((type) => [type,0])); const result = []; const total = Object.values(deltas).reduce((sum,count) => sum + count,0);
+  for (let index = 0; index < total; index += 1) {
+    const type = Object.keys(deltas).filter((item) => used.get(item) < deltas[item]).sort((a,b) => (used.get(a) / deltas[a]) - (used.get(b) / deltas[b]) || a.localeCompare(b,"es"))[0];
+    result.push(type); used.set(type,used.get(type) + 1);
+  }
+  return result;
+}
+function buildTelegramHistory() {
+  const history = []; let previousDate = null; let running = {}; let index = 0;
+  TELEGRAM_SNAPSHOTS.forEach(([date,changes]) => {
+    const next = {...running,...changes}; const deltas = {};
+    Object.keys(TELEGRAM_FORMAT_VOLUMES).forEach((type) => { const delta = Number(next[type] || 0) - Number(running[type] || 0); if (delta > 0) deltas[type] = delta; });
+    const events = evenlyOrderedFormats(deltas); const gap = previousDate ? dateDifferenceDays(previousDate,date) : 0;
+    const estimated = gap >= 4 && events.length >= 5;
+    events.forEach((type,eventIndex) => {
+      const offset = estimated ? 1 + Math.floor(eventIndex * gap / events.length) : 0;
+      history.push({id:`telegram-history-${String(index++).padStart(3,"0")}`,type,volume:TELEGRAM_FORMAT_VOLUMES[type],date:estimated ? dateWithOffset(previousDate,offset) : `${date}T12:00:00.000Z`,source:"telegram",estimated});
+    });
+    running = next; previousDate = date;
+  });
+  return history;
+}
+function migrateTelegramHistory() {
+  if (state.imports.telegramHistoryV1) return false;
+  const initialTally = state.drinks.filter((drink) => String(drink.id).startsWith("initial-tally-"));
+  if (initialTally.length !== 207) return false;
+  const historical = buildTelegramHistory(); if (historical.length !== 207) return false;
+  state.drinks = state.drinks.filter((drink) => !String(drink.id).startsWith("initial-tally-"));
+  state.historical = historical;
+  state.imports.telegramHistoryV1 = {migratedAt:new Date().toISOString(),sourceMessages:52,records:historical.length,volumeMl:historical.reduce((sum,entry) => sum + entry.volume,0)};
+  return true;
 }
 function save() {
   if (!activeUserId) return;
@@ -367,16 +430,20 @@ function renderVolumes(today, week, month) {
   const currentYear = new Date().getFullYear();
   const year = state.drinks.filter((drink) => new Date(drink.date).getFullYear() === currentYear);
   const total = (drinks) => drinks.reduce((sum, drink) => sum + Number(drink.volume || 0), 0);
-  const values = [total(today), total(week), total(month), total(year)];
+  const historicalSince = (start) => state.historical.filter((entry) => new Date(entry.date) >= start);
+  const historicalYear = state.historical.filter((entry) => new Date(entry.date).getFullYear() === currentYear);
+  const values = [total(today) + total(historicalSince(startOfDay())),total(week) + total(historicalSince(startOfWeek())),total(month) + total(historicalSince(startOfMonth())),total(year) + total(historicalYear)];
   const formatter = new Intl.NumberFormat("es-ES", volumeUnit === "L" ? {maximumFractionDigits:2} : {maximumFractionDigits:0});
   ["#volume-day", "#volume-week", "#volume-month", "#volume-year"].forEach((selector, index) => { $(selector).textContent = formatter.format(volumeUnit === "L" ? values[index] / 1000 : values[index]); });
   document.querySelectorAll(".volume-unit").forEach((element) => { element.textContent = volumeUnit; });
   $("#unit-toggle").textContent = volumeUnit;
+  $("#volume-historical-note").hidden = !state.historical.length;
 }
 const FORMAT_COLORS = ["#ffb20f", "#d96a32", "#68725d", "#a97b32", "#4f5949", "#e5a13a", "#8d4f2b", "#b3a36e", "#334037", "#c67c52", "#7b6b48", "#e0b557"];
+function formatEntries() { return [...state.drinks,...state.historical]; }
 function getFormatStats() {
   const stats = new Map();
-  state.drinks.forEach((drink) => {
+  formatEntries().forEach((drink) => {
     const current = stats.get(drink.type) || {type:drink.type, count:0, volume:0};
     current.count += 1; current.volume += Number(drink.volume || 0); stats.set(drink.type, current);
   });
@@ -405,16 +472,17 @@ function allocateFormatPercentages(formats, total) {
 }
 function reorderFormatOptions() {
   const counts = new Map();
-  state.drinks.forEach((drink) => counts.set(drink.type, (counts.get(drink.type) || 0) + 1));
+  formatEntries().forEach((drink) => counts.set(drink.type, (counts.get(drink.type) || 0) + 1));
   const container = $(".size-options");
   [...container.querySelectorAll(".size-option")]
     .sort((a, b) => (counts.get(b.dataset.type) || 0) - (counts.get(a.dataset.type) || 0) || a.dataset.type.localeCompare(b.dataset.type, "es", {sensitivity:"base"}))
     .forEach((option) => container.appendChild(option));
 }
 function renderFormatStats() {
-  const formats = getFormatStats(); const total = state.drinks.length || 1;
-  const percentages = allocateFormatPercentages(formats, state.drinks.length);
-  $("#formats-total").textContent = `${state.drinks.length} en total`;
+  const entries = formatEntries(); const formats = getFormatStats(); const total = entries.length || 1;
+  const percentages = allocateFormatPercentages(formats, entries.length);
+  $("#formats-total").textContent = `${entries.length} en formatos`;
+  $("#formats-historical-note").hidden = !state.historical.length;
   const favorite = formats[0]; const favoritePercent = favorite ? percentages.get(favorite.type) : 0;
   $("#favorite-percent").textContent = `${favoritePercent}%`; $("#favorite-format").textContent = favorite?.type || "Sin datos";
   $("#insight-favorite").textContent = favorite?.type || "—";
@@ -804,7 +872,8 @@ function render() {
   renderInsights();
   const favorite = getFormatStats()[0];
   $("#profile-total").textContent = state.drinks.length;
-  $("#profile-liters").textContent = `${(state.drinks.reduce((sum, drink) => sum + Number(drink.volume || 0), 0) / 1000).toLocaleString("es-ES", {maximumFractionDigits:1})} L`;
+  $("#profile-liters").textContent = `${(formatEntries().reduce((sum, drink) => sum + Number(drink.volume || 0), 0) / 1000).toLocaleString("es-ES", {maximumFractionDigits:1})} L`;
+  $("#profile-volume-context").textContent = state.historical.length ? `incluye ${state.historical.length} históricos` : "consumido";
   $("#profile-favorite").textContent = favorite?.type || "—";
   renderDriverProfile();
   renderBeerAlbum();
@@ -1048,7 +1117,7 @@ els.history.addEventListener("click", (event) => {
   state.drinks = state.drinks.filter((drink) => drink.id !== deleteButton.dataset.deleteId); save(); render(); showToast("Registro eliminado");
 });
 $("#clear-data").addEventListener("click", () => { els.settingsDialog.close(); $("#clear-confirm-dialog").showModal(); });
-$("#confirm-clear-data").addEventListener("click", () => { state.drinks = []; save(); render(); $("#clear-confirm-dialog").close(); showToast("Historial borrado"); });
+$("#confirm-clear-data").addEventListener("click", () => { state.drinks = []; state.historical = []; save(); render(); $("#clear-confirm-dialog").close(); showToast("Historial borrado"); });
 function exportData() {
   const blob = new Blob([JSON.stringify({ exportedAt:new Date().toISOString(), ...state }, null, 2)], {type:"application/json"}); const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.href=url; link.download=`birrometro-${new Date().toISOString().slice(0,10)}.json`; link.click(); URL.revokeObjectURL(url); showToast("Datos exportados");
 }
@@ -1077,11 +1146,12 @@ window.addEventListener("birrometro-auth", (event) => {
   if (user) {
     activeUserId = user.uid;
     applyState(readUserState(user.uid));
+    if (migrateTelegramHistory()) save();
     appShell.dataset.auth = "ready";
   } else {
     activeUserId = null;
     groups = [];
-    applyState({drinks:[],imports:{},album:[]});
+    applyState({drinks:[],historical:[],imports:{},album:[]});
     appShell.dataset.auth = "locked";
     appShell.dataset.view = "home";
     $("#gate-google-login").disabled = false;
@@ -1112,10 +1182,12 @@ window.addEventListener("birrometro-group-error", (event) => {
 window.addEventListener("birrometro-cloud-state", (event) => {
   if (!activeUserId || !Array.isArray(event.detail?.drinks)) return;
   applyState(event.detail);
+  const migrated = migrateTelegramHistory();
   localStorage.setItem(userStorageKey(activeUserId), JSON.stringify(state));
   localStorage.removeItem("birrometro-v1");
   localStorage.removeItem(["cervezo", "metro-v1"].join(""));
-  appShell.dataset.auth = "ready"; render(); showToast("Datos sincronizados");
+  if (migrated) save();
+  appShell.dataset.auth = "ready"; render(); showToast(migrated ? "Histórico de Telegram integrado" : "Datos sincronizados");
 });
 window.addEventListener("birrometro-sync-error", () => showToast("Sin conexión · mostrando la copia de esta cuenta"));
 window.addEventListener("birrometro-auth-error", () => {

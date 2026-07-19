@@ -156,6 +156,10 @@ section { scroll-margin-top: 90px; }
 .format-bar { height: 4px; overflow: hidden; border-radius: 6px; background: #efede6; }
 .format-bar i { display: block; height: 100%; border-radius: inherit; background: var(--format-color); }
 .format-row > b { text-align: right; font: 13px "Fraunces"; }
+.historical-data-note { margin: 12px 0 0; padding: 12px 14px; display: flex; align-items: center; gap: 10px; border: 1px solid rgba(104,114,93,.2); border-radius: 14px; background: #eef1e9; color: var(--muted); font-size: 8px; line-height: 1.45; }
+.historical-data-note[hidden] { display: none; }
+.historical-data-note svg { flex: 0 0 auto; width: 20px; height: 20px; fill: none; stroke: var(--green); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.historical-data-note strong { display: block; margin-bottom: 2px; color: var(--green); font-size: 9px; }
 
 .unit-toggle { width: 42px; height: 32px; border: 0; border-radius: 18px; background: var(--ink); color: white; font-size: 11px; font-weight: 800; cursor: pointer; }
 .volume-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }

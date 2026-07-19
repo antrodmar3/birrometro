@@ -133,7 +133,7 @@ async function runGroupOperation(operation) {
 async function syncState(state) {
   if (!currentUser || !state) return;
   cachedState = state;
-  await setDoc(userDocument(currentUser.uid), { drinks:state.drinks || [], imports:state.imports || {}, album:state.album || [], driver:state.driver || {}, updatedAt:serverTimestamp() }, { merge:true });
+  await setDoc(userDocument(currentUser.uid), { drinks:state.drinks || [], historical:state.historical || [], imports:state.imports || {}, album:state.album || [], driver:state.driver || {}, updatedAt:serverTimestamp() }, { merge:true });
   await syncOwnGroupStats(state);
 }
 
@@ -165,7 +165,7 @@ setPersistence(auth, browserLocalPersistence).then(() => onAuthStateChanged(auth
       await loadGroups();
       return;
     }
-    const initialState = { drinks:[], imports:{}, album:[], driver:{enabled:true,weight:null,height:null},groupIds:[] };
+    const initialState = { drinks:[], historical:[], imports:{}, album:[], driver:{enabled:true,weight:null,height:null},groupIds:[] };
     cachedState = initialState;
     await syncState(initialState);
     window.dispatchEvent(new CustomEvent("birrometro-cloud-state", { detail:initialState }));
