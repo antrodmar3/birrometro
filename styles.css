@@ -214,6 +214,9 @@ section { scroll-margin-top: 90px; }
 .history-date { width: fit-content; margin-top: 6px; padding: 5px 8px 5px 6px; display: flex; align-items: center; gap: 5px; border-radius: 8px; background: #f4ecda; color: #78530c; font-size: 8px; font-weight: 800; line-height: 1; }
 .history-date svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .history-actions { display: flex; align-items: center; gap: 3px; }
+.history-item--historical { background: linear-gradient(90deg,rgba(104,114,93,.045),transparent 42%); }
+.history-item--historical .beer-dot { background: #edf0e8; color: var(--green); }
+.history-source { padding: 6px 8px; border: 1px solid rgba(104,114,93,.18); border-radius: 999px; background: #edf0e8; color: var(--green); font-size: 7px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
 .edit-entry, .delete-entry { width: 34px; height: 34px; padding: 7px; display: grid; place-items: center; border: 0; border-radius: 11px; background: transparent; cursor: pointer; }
 .edit-entry { color: var(--green); }
 .edit-entry:hover { background: rgba(104,114,93,.12); }

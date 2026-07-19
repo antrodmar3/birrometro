@@ -206,13 +206,13 @@ function applyState(nextState) {
 }
 function sanitizeHistoricalEntries(entries) {
   return (Array.isArray(entries) ? entries : []).map((entry) => {
-    const type = String(entry?.type || ""); const volume = Number(entry?.volume); const date = new Date(entry?.date);
-    if (!TELEGRAM_FORMAT_VOLUMES[type] || volume !== TELEGRAM_FORMAT_VOLUMES[type] || Number.isNaN(date.getTime())) return null;
-    return {id:String(entry.id || ""),type,volume,date:date.toISOString(),source:"telegram",estimated:Boolean(entry.estimated)};
+    const type = String(entry?.type || ""); const volume = Number(entry?.volume); const dateOnly = String(entry?.date || "").slice(0,10); const date = new Date(`${dateOnly}T12:00:00Z`);
+    if (!TELEGRAM_FORMAT_VOLUMES[type] || volume !== TELEGRAM_FORMAT_VOLUMES[type] || !/^\d{4}-\d{2}-\d{2}$/.test(dateOnly) || Number.isNaN(date.getTime())) return null;
+    return {id:String(entry.id || ""),type,volume,date:dateOnly,source:"telegram",estimated:Boolean(entry.estimated)};
   }).filter(Boolean);
 }
 function dateDifferenceDays(first, second) { return Math.round((Date.parse(`${second}T12:00:00Z`) - Date.parse(`${first}T12:00:00Z`)) / 86400000); }
-function dateWithOffset(date, offset) { const value = new Date(`${date}T12:00:00Z`); value.setUTCDate(value.getUTCDate() + offset); return value.toISOString(); }
+function dateWithOffset(date, offset) { const value = new Date(`${date}T12:00:00Z`); value.setUTCDate(value.getUTCDate() + offset); return value.toISOString().slice(0,10); }
 function evenlyOrderedFormats(deltas) {
   const used = new Map(Object.keys(deltas).map((type) => [type,0])); const result = []; const total = Object.values(deltas).reduce((sum,count) => sum + count,0);
   for (let index = 0; index < total; index += 1) {
@@ -230,20 +230,21 @@ function buildTelegramHistory() {
     const estimated = gap >= 4 && events.length >= 5;
     events.forEach((type,eventIndex) => {
       const offset = estimated ? 1 + Math.floor(eventIndex * gap / events.length) : 0;
-      history.push({id:`telegram-history-${String(index++).padStart(3,"0")}`,type,volume:TELEGRAM_FORMAT_VOLUMES[type],date:estimated ? dateWithOffset(previousDate,offset) : `${date}T12:00:00.000Z`,source:"telegram",estimated});
+      history.push({id:`telegram-history-${String(index++).padStart(3,"0")}`,type,volume:TELEGRAM_FORMAT_VOLUMES[type],date:estimated ? dateWithOffset(previousDate,offset) : date,source:"telegram",estimated});
     });
     running = next; previousDate = date;
   });
   return history;
 }
 function migrateTelegramHistory() {
-  if (state.imports.telegramHistoryV1) return false;
+  if (state.imports.telegramHistoryV2 && state.historical.length === 207) return false;
   const initialTally = state.drinks.filter((drink) => String(drink.id).startsWith("initial-tally-"));
-  if (initialTally.length !== 207) return false;
+  if (!state.imports.telegramHistoryV1 && initialTally.length !== 207) return false;
   const historical = buildTelegramHistory(); if (historical.length !== 207) return false;
   state.drinks = state.drinks.filter((drink) => !String(drink.id).startsWith("initial-tally-"));
   state.historical = historical;
   state.imports.telegramHistoryV1 = {migratedAt:new Date().toISOString(),sourceMessages:52,records:historical.length,volumeMl:historical.reduce((sum,entry) => sum + entry.volume,0)};
+  state.imports.telegramHistoryV2 = {migratedAt:new Date().toISOString(),records:historical.length,datePrecision:"day"};
   return true;
 }
 function scheduleTelegramMigration() {
@@ -974,14 +975,18 @@ function render() {
   els.streak.textContent = currentStreak();
   $("#hero-week-count").textContent = week.length; $("#hero-streak-count").textContent = currentStreak();
   els.history.innerHTML = "";
-  [...state.drinks].sort((a,b) => new Date(b.date) - new Date(a.date)).forEach((drink) => {
-    const date = new Date(drink.date); const li = document.createElement("li"); li.className = "history-item";
+  const historyEntries = [...state.drinks.map((drink) => ({...drink,isHistorical:false})),...state.historical.map((drink) => ({...drink,isHistorical:true}))].sort((a,b) => new Date(b.date) - new Date(a.date) || String(b.id).localeCompare(String(a.id)));
+  historyEntries.forEach((drink) => {
+    const date = new Date(drink.isHistorical ? `${drink.date}T12:00:00` : drink.date); const li = document.createElement("li"); li.className = `history-item${drink.isHistorical ? " history-item--historical" : ""}`;
     const location = sanitizeLocation(drink.location); const locationCopy = location ? ` · 📍 ${location.name || "Con ubicación"}` : "";
-    const dateLabel = new Intl.DateTimeFormat("es-ES",{day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"}).format(date).replace(","," ·");
-    li.innerHTML = `<span class="beer-dot">●</span><span class="history-main"><strong>${escapeHtml(drink.type)} · ${drink.volume} ml</strong><time class="history-date" datetime="${date.toISOString()}"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>${escapeHtml(dateLabel)}</time><small>${escapeHtml(drink.note || `${drink.abv}% vol.`)}${escapeHtml(locationCopy)}</small></span><span class="history-actions"><button class="edit-entry" data-edit-id="${drink.id}" type="button" aria-label="Editar registro"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 16-.8 4.8L8 20l10.8-10.8a2.4 2.4 0 0 0-3.4-3.4L4.6 16.6 4 20"/><path d="m14 7 3 3"/></svg></button><button class="delete-entry" data-delete-id="${drink.id}" type="button" aria-label="Eliminar registro">×</button></span>`;
+    const dateLabel = new Intl.DateTimeFormat("es-ES",drink.isHistorical ? {day:"numeric",month:"long",year:"numeric"} : {day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"}).format(date).replace(","," ·");
+    const detail = drink.isHistorical ? `Histórico de Telegram · ${drink.estimated ? "día estimado" : "día del resumen"}` : `${drink.note || `${drink.abv}% vol.`}${locationCopy}`;
+    const actions = drink.isHistorical ? '<span class="history-source">Histórico</span>' : `<span class="history-actions"><button class="edit-entry" data-edit-id="${drink.id}" type="button" aria-label="Editar registro"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 16-.8 4.8L8 20l10.8-10.8a2.4 2.4 0 0 0-3.4-3.4L4.6 16.6 4 20"/><path d="m14 7 3 3"/></svg></button><button class="delete-entry" data-delete-id="${drink.id}" type="button" aria-label="Eliminar registro">×</button></span>`;
+    li.innerHTML = `<span class="beer-dot">●</span><span class="history-main"><strong>${escapeHtml(drink.type)} · ${drink.volume} ml</strong><time class="history-date" datetime="${drink.isHistorical ? escapeHtml(drink.date) : date.toISOString()}"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>${escapeHtml(dateLabel)}</time><small>${escapeHtml(detail)}</small></span>${actions}`;
     els.history.appendChild(li);
   });
-  els.empty.hidden = state.drinks.length > 0; els.history.hidden = state.drinks.length === 0;
+  $("#history-title").textContent = `Historial · ${historyEntries.length}`;
+  els.empty.hidden = historyEntries.length > 0; els.history.hidden = historyEntries.length === 0;
   const latest = [...state.drinks].sort((a,b) => new Date(b.date) - new Date(a.date))[0];
   $("#undo-last").disabled = !latest;
   $("#undo-hint").textContent = latest ? `${latest.type} · ${new Intl.DateTimeFormat("es-ES", {day:"numeric", month:"short", hour:"2-digit", minute:"2-digit"}).format(new Date(latest.date))}` : "No hay registros";
