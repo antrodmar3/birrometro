@@ -131,8 +131,8 @@ let pendingEditLocation = null;
 const mapDisabledFormats = new Set();
 const FORMAT_ICON_PATHS = Object.freeze({
   "Botellín":"assets/menu-icons/botellin.webp", "Caña":"assets/menu-icons/cana.webp", "Copa":"assets/menu-icons/copa.webp",
-  "Cortá":"assets/menu-icons/corta.webp", "Grande":"assets/menu-icons/grande.webp", "Lata":"assets/menu-icons/lata.webp",
-  "Lata gordita":"assets/menu-icons/lata-gordita.webp", "Litro":"assets/menu-icons/litro.webp", "Pinta":"assets/menu-icons/pinta.webp",
+  "Cortá":"assets/menu-icons/corta.webp", "Grande":"assets/menu-icons/grande.webp", "Jarra":"assets/menu-icons/jarra.svg", "Lata":"assets/menu-icons/lata.webp",
+  "Lata gordita":"assets/menu-icons/lata-gordita.webp", "Litro":"assets/menu-icons/litro.webp", "Media Litro":"assets/menu-icons/media-litro.svg", "Pinta":"assets/menu-icons/pinta.webp",
   "Sin":"assets/menu-icons/sin.webp", "Tercio":"assets/menu-icons/tercio.webp", "Yonkilata":"assets/menu-icons/yonkilata.webp"
 });
 const beerCatalogById = new Map(beerCatalog.map((beer) => [beer.id, beer]));

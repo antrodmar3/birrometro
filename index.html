@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#f5f1e8" />
     <meta name="description" content="Birrómetro: registra tu consumo de cerveza de forma sencilla y consciente." />
     <title>Birrómetro</title>
-    <link rel="manifest" href="manifest.webmanifest?v=43" />
+    <link rel="manifest" href="manifest.webmanifest?v=44" />
     <link rel="preload" href="assets/loading-beers.png" as="image" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Birrómetro" />
@@ -15,8 +15,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,800;9..144,900&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="assets/vendor/leaflet.css?v=43" />
-    <link rel="stylesheet" href="styles.css?v=43" />
+    <link rel="stylesheet" href="assets/vendor/leaflet.css?v=44" />
+    <link rel="stylesheet" href="styles.css?v=44" />
   </head>
   <body>
     <div class="app-shell" data-view="home" data-auth="pending">
@@ -216,7 +216,7 @@
               <div class="map-tools" id="map-tools">
                 <div class="map-tool-row">
                   <button class="map-fullscreen-toggle" id="map-fullscreen-toggle" type="button" aria-pressed="false" aria-label="Abrir mapa a pantalla completa"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/></svg><span>Ampliar</span></button>
-                  <button class="map-filter-toggle" id="map-filter-toggle" type="button" aria-expanded="false" aria-controls="map-filter-panel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg><span>Filtrar</span><b id="map-filter-count">12/12</b></button>
+                  <button class="map-filter-toggle" id="map-filter-toggle" type="button" aria-expanded="false" aria-controls="map-filter-panel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg><span>Filtrar</span><b id="map-filter-count">14/14</b></button>
                 </div>
                 <div class="map-filter-panel" id="map-filter-panel" hidden>
                   <label class="map-period"><span>Periodo</span><select id="location-period"><option value="all">Todo</option><option value="year">Este año</option><option value="month">Este mes</option></select></label>
@@ -263,6 +263,8 @@
           <button class="size-option" type="button" data-volume="568" data-type="Pinta"><span class="size-icon size-icon--image" aria-hidden="true"><img src="assets/menu-icons/pinta.webp" alt="" /></span><span><strong>Pinta</strong><small>568 ml</small></span><b>+</b></button>
           <button class="size-option" type="button" data-volume="200" data-type="Caña"><span class="size-icon size-icon--image" aria-hidden="true"><img src="assets/menu-icons/cana.webp" alt="" /></span><span><strong>Caña</strong><small>200 ml</small></span><b>+</b></button>
           <button class="size-option" type="button" data-volume="400" data-type="Grande"><span class="size-icon size-icon--image" aria-hidden="true"><img src="assets/menu-icons/grande.webp" alt="" /></span><span><strong>Grande</strong><small>400 ml · vaso de sidra</small></span><b>+</b></button>
+          <button class="size-option" type="button" data-volume="500" data-type="Jarra"><span class="size-icon size-icon--image" aria-hidden="true"><img src="assets/menu-icons/jarra.svg" alt="" /></span><span><strong>Jarra</strong><small>500 ml · con asa</small></span><b>+</b></button>
+          <button class="size-option" type="button" data-volume="500" data-type="Media Litro"><span class="size-icon size-icon--image" aria-hidden="true"><img src="assets/menu-icons/media-litro.svg" alt="" /></span><span><strong>Media Litro</strong><small>500 ml · vaso</small></span><b>+</b></button>
           <button class="size-option" type="button" data-volume="500" data-type="Yonkilata"><span class="size-icon size-icon--image" aria-hidden="true"><img src="assets/menu-icons/yonkilata.webp" alt="" /></span><span><strong>Yonkilata</strong><small>500 ml</small></span><b>+</b></button>
         </div>
       </div>
@@ -305,7 +307,7 @@
         <div class="dialog-head"><div><p class="eyebrow">Registro manual</p><h2>Cerveza olvidada</h2></div><button class="close-button" type="button" data-close-dialog aria-label="Cerrar">×</button></div>
         <p class="dialog-copy">Selecciona el momento y el formato.</p>
         <label>Fecha y hora<input type="datetime-local" name="date" id="late-date" required /></label>
-        <label>Formato<select name="format"><option value="1000|Litro|5">Litro · 1.000 ml</option><option value="330|Lata|5" selected>Lata · 330 ml</option><option value="330|Lata gordita|5">Lata gordita · 330 ml</option><option value="330|Sin|0">Sin · 330 ml · 0 %</option><option value="300|Copa|5">Copa · 300 ml</option><option value="200|Cortá|5">Cortá · 200 ml</option><option value="330|Tercio|5">Tercio · 330 ml</option><option value="250|Botellín|5">Botellín · 250 ml</option><option value="568|Pinta|5">Pinta · 568 ml</option><option value="200|Caña|5">Caña · 200 ml</option><option value="400|Grande|5">Grande · 400 ml</option><option value="500|Yonkilata|5">Yonkilata · 500 ml</option></select></label>
+        <label>Formato<select name="format"><option value="1000|Litro|5">Litro · 1.000 ml</option><option value="330|Lata|5" selected>Lata · 330 ml</option><option value="330|Lata gordita|5">Lata gordita · 330 ml</option><option value="330|Sin|0">Sin · 330 ml · 0 %</option><option value="300|Copa|5">Copa · 300 ml</option><option value="200|Cortá|5">Cortá · 200 ml</option><option value="330|Tercio|5">Tercio · 330 ml</option><option value="250|Botellín|5">Botellín · 250 ml</option><option value="568|Pinta|5">Pinta · 568 ml</option><option value="200|Caña|5">Caña · 200 ml</option><option value="400|Grande|5">Grande · 400 ml</option><option value="500|Jarra|5">Jarra · 500 ml</option><option value="500|Media Litro|5">Media Litro · 500 ml</option><option value="500|Yonkilata|5">Yonkilata · 500 ml</option></select></label>
         <button class="primary-button" type="submit">Añadir al historial</button>
       </form>
     </dialog>
@@ -317,7 +319,7 @@
         <p class="dialog-copy">Corrige el formato, el momento o el lugar donde tomaste esta cerveza.</p>
         <div class="edit-entry-fields">
           <label>Fecha y hora<input type="datetime-local" id="edit-entry-date" name="date" required /></label>
-          <label>Formato<select id="edit-entry-format" name="format"><option value="1000|Litro|5">Litro · 1.000 ml</option><option value="330|Lata|5">Lata · 330 ml</option><option value="330|Lata gordita|5">Lata gordita · 330 ml</option><option value="330|Sin|0">Sin · 330 ml · 0 %</option><option value="300|Copa|5">Copa · 300 ml</option><option value="200|Cortá|5">Cortá · 200 ml</option><option value="330|Tercio|5">Tercio · 330 ml</option><option value="250|Botellín|5">Botellín · 250 ml</option><option value="568|Pinta|5">Pinta · 568 ml</option><option value="200|Caña|5">Caña · 200 ml</option><option value="400|Grande|5">Grande · 400 ml</option><option value="500|Yonkilata|5">Yonkilata · 500 ml</option></select></label>
+          <label>Formato<select id="edit-entry-format" name="format"><option value="1000|Litro|5">Litro · 1.000 ml</option><option value="330|Lata|5">Lata · 330 ml</option><option value="330|Lata gordita|5">Lata gordita · 330 ml</option><option value="330|Sin|0">Sin · 330 ml · 0 %</option><option value="300|Copa|5">Copa · 300 ml</option><option value="200|Cortá|5">Cortá · 200 ml</option><option value="330|Tercio|5">Tercio · 330 ml</option><option value="250|Botellín|5">Botellín · 250 ml</option><option value="568|Pinta|5">Pinta · 568 ml</option><option value="200|Caña|5">Caña · 200 ml</option><option value="400|Grande|5">Grande · 400 ml</option><option value="500|Jarra|5">Jarra · 500 ml</option><option value="500|Media Litro|5">Media Litro · 500 ml</option><option value="500|Yonkilata|5">Yonkilata · 500 ml</option></select></label>
         </div>
         <section class="edit-location" aria-labelledby="edit-location-title">
           <div class="edit-location__head"><div><small>Ubicación</small><strong id="edit-location-title">Corrige el punto en el mapa</strong></div><span id="edit-location-coordinates">Sin ubicación</span></div>
@@ -378,10 +380,10 @@
     </dialog>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script src="assets/vendor/leaflet.js?v=43"></script>
-    <script src="assets/vendor/leaflet-heat.js?v=43"></script>
-    <script src="beer-catalog.js?v=43"></script>
-    <script type="module" src="firebase-sync.js?v=43"></script>
-    <script src="script.js?v=43"></script>
+    <script src="assets/vendor/leaflet.js?v=44"></script>
+    <script src="assets/vendor/leaflet-heat.js?v=44"></script>
+    <script src="beer-catalog.js?v=44"></script>
+    <script type="module" src="firebase-sync.js?v=44"></script>
+    <script src="script.js?v=44"></script>
   </body>
 </html>
