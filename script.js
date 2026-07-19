@@ -128,6 +128,7 @@ let editLocationMap = null;
 let editLocationMarker = null;
 let editingDrinkId = null;
 let pendingEditLocation = null;
+let telegramMigrationTimer = null;
 const mapDisabledFormats = new Set();
 const FORMAT_ICON_PATHS = Object.freeze({
   "Botellín":"assets/menu-icons/botellin.webp", "Caña":"assets/menu-icons/cana.webp", "Copa":"assets/menu-icons/copa.webp",
@@ -244,6 +245,18 @@ function migrateTelegramHistory() {
   state.historical = historical;
   state.imports.telegramHistoryV1 = {migratedAt:new Date().toISOString(),sourceMessages:52,records:historical.length,volumeMl:historical.reduce((sum,entry) => sum + entry.volume,0)};
   return true;
+}
+function scheduleTelegramMigration() {
+  clearTimeout(telegramMigrationTimer);
+  telegramMigrationTimer = setTimeout(() => {
+    try {
+      if (!activeUserId || !migrateTelegramHistory()) return;
+      save(); render(); showToast("Histórico de Telegram integrado");
+    } catch (error) {
+      console.error("No se pudo integrar el histórico de Telegram",error);
+      showToast("La app está disponible · histórico pendiente");
+    }
+  },250);
 }
 function save() {
   if (!activeUserId) return;
@@ -1146,8 +1159,8 @@ window.addEventListener("birrometro-auth", (event) => {
   if (user) {
     activeUserId = user.uid;
     applyState(readUserState(user.uid));
-    if (migrateTelegramHistory()) save();
     appShell.dataset.auth = "ready";
+    scheduleTelegramMigration();
   } else {
     activeUserId = null;
     groups = [];
@@ -1182,12 +1195,10 @@ window.addEventListener("birrometro-group-error", (event) => {
 window.addEventListener("birrometro-cloud-state", (event) => {
   if (!activeUserId || !Array.isArray(event.detail?.drinks)) return;
   applyState(event.detail);
-  const migrated = migrateTelegramHistory();
   localStorage.setItem(userStorageKey(activeUserId), JSON.stringify(state));
   localStorage.removeItem("birrometro-v1");
   localStorage.removeItem(["cervezo", "metro-v1"].join(""));
-  if (migrated) save();
-  appShell.dataset.auth = "ready"; render(); showToast(migrated ? "Histórico de Telegram integrado" : "Datos sincronizados");
+  appShell.dataset.auth = "ready"; render(); showToast("Datos sincronizados"); scheduleTelegramMigration();
 });
 window.addEventListener("birrometro-sync-error", () => showToast("Sin conexión · mostrando la copia de esta cuenta"));
 window.addEventListener("birrometro-auth-error", () => {
