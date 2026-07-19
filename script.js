@@ -107,6 +107,7 @@
 const CLOSED_BEER_CATALOG = Array.isArray(window.BEER_CATALOG) ? window.BEER_CATALOG : [];
 const state = loadState();
 let activeUserId = null;
+let activeUserEmail = null;
 let volumeUnit = "L";
 const beerCatalog = CLOSED_BEER_CATALOG;
 let albumFilter = "all";
@@ -141,6 +142,7 @@ const DRIVER_WINDOW_MS = 2 * 60 * 60 * 1000;
 const ETHANOL_DENSITY = 0.789;
 const LOCATION_SNAP_RADIUS_METERS = 60;
 const TELEGRAM_FORMAT_VOLUMES = Object.freeze({"Lata":330,"Lata gordita":330,"Copa":300,"Cortá":200,"Tercio":330,"Botellín":250,"Pinta":568,"Caña":200,"Grande":400,"Yonkilata":500});
+const TELEGRAM_HISTORY_OWNER_KEY = "103ebb8c";
 const TELEGRAM_SNAPSHOTS = Object.freeze([
   ["2026-01-12",{"Cortá":3}], ["2026-01-13",{"Cortá":5}], ["2026-01-15",{"Lata":2}],
   ["2026-01-16",{"Lata":5,"Cortá":8}], ["2026-01-17",{"Lata":10}], ["2026-01-18",{"Lata":14,"Cortá":8}],
@@ -211,6 +213,11 @@ function sanitizeHistoricalEntries(entries) {
     return {id:String(entry.id || ""),type,volume,date:dateOnly,source:"telegram",estimated:Boolean(entry.estimated)};
   }).filter(Boolean);
 }
+function emailFingerprint(value) {
+  let hash = 2166136261;
+  for (const character of String(value || "").trim().toLowerCase()) { hash ^= character.charCodeAt(0); hash = Math.imul(hash,16777619); }
+  return (hash >>> 0).toString(16);
+}
 function dateDifferenceDays(first, second) { return Math.round((Date.parse(`${second}T12:00:00Z`) - Date.parse(`${first}T12:00:00Z`)) / 86400000); }
 function dateWithOffset(date, offset) { const value = new Date(`${date}T12:00:00Z`); value.setUTCDate(value.getUTCDate() + offset); return value.toISOString().slice(0,10); }
 function evenlyOrderedFormats(deltas) {
@@ -239,7 +246,8 @@ function buildTelegramHistory() {
 function migrateTelegramHistory() {
   if (state.imports.telegramHistoryV2 && state.historical.length === 207) return false;
   const initialTally = state.drinks.filter((drink) => String(drink.id).startsWith("initial-tally-"));
-  if (!state.imports.telegramHistoryV1 && initialTally.length !== 207) return false;
+  const isHistoricalOwner = emailFingerprint(activeUserEmail) === TELEGRAM_HISTORY_OWNER_KEY;
+  if (!isHistoricalOwner && !state.imports.telegramHistoryV1 && initialTally.length !== 207) return false;
   const historical = buildTelegramHistory(); if (historical.length !== 207) return false;
   state.drinks = state.drinks.filter((drink) => !String(drink.id).startsWith("initial-tally-"));
   state.historical = historical;
@@ -969,7 +977,8 @@ function render() {
   const today = since(startOfDay()); const week = since(startOfWeek()); const month = since(startOfMonth());
   const currentYear = new Date().getFullYear();
   const year = state.drinks.filter((drink) => new Date(drink.date).getFullYear() === currentYear);
-  els.todayCount.textContent = today.length; els.yearCount.textContent = year.length;
+  const historicalYear = state.historical.filter((drink) => new Date(drink.date).getFullYear() === currentYear);
+  els.todayCount.textContent = today.length; els.yearCount.textContent = year.length + historicalYear.length;
   $("#marker-year").textContent = currentYear;
   els.weekCount.textContent = week.length; els.monthCount.textContent = month.length;
   els.streak.textContent = currentStreak();
@@ -996,7 +1005,7 @@ function render() {
   reorderFormatOptions();
   renderInsights();
   const favorite = getFormatStats()[0];
-  $("#profile-total").textContent = state.drinks.length;
+  $("#profile-total").textContent = formatEntries().length;
   $("#profile-liters").textContent = `${(formatEntries().reduce((sum, drink) => sum + Number(drink.volume || 0), 0) / 1000).toLocaleString("es-ES", {maximumFractionDigits:1})} L`;
   $("#profile-volume-context").textContent = state.historical.length ? `incluye ${state.historical.length} históricos` : "consumido";
   $("#profile-favorite").textContent = favorite?.type || "—";
@@ -1292,11 +1301,13 @@ window.addEventListener("birrometro-auth", (event) => {
   const user = event.detail;
   if (user) {
     activeUserId = user.uid;
+    activeUserEmail = user.email || null;
     applyState(readUserState(user.uid));
     appShell.dataset.auth = "ready";
     scheduleTelegramMigration();
   } else {
     activeUserId = null;
+    activeUserEmail = null;
     groups = [];
     applyState({drinks:[],historical:[],imports:{},album:[]});
     appShell.dataset.auth = "locked";

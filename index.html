@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#f5f1e8" />
     <meta name="description" content="Birrómetro: registra tu consumo de cerveza de forma sencilla y consciente." />
     <title>Birrómetro</title>
-    <link rel="manifest" href="manifest.webmanifest?v=49" />
+    <link rel="manifest" href="manifest.webmanifest?v=50" />
     <link rel="preload" href="assets/loading-beers.png" as="image" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Birrómetro" />
@@ -15,8 +15,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,800;9..144,900&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="assets/vendor/leaflet.css?v=49" />
-    <link rel="stylesheet" href="styles.css?v=49" />
+    <link rel="stylesheet" href="assets/vendor/leaflet.css?v=50" />
+    <link rel="stylesheet" href="styles.css?v=50" />
   </head>
   <body>
     <div class="app-shell" data-view="home" data-auth="pending">
@@ -53,7 +53,7 @@
           <div class="card-heading">
             <div>
               <p class="eyebrow">Tu marcador · <span id="marker-year">2026</span></p>
-              <h2 id="year-title"><span id="year-count">0</span> <small>registros precisos<br />este año</small></h2>
+              <h2 id="year-title"><span id="year-count">0</span> <small>cervezas registradas<br />este año</small></h2>
             </div>
             <span class="today-mark" aria-hidden="true"><img src="assets/loading-beers.png" alt="" /></span>
           </div>
@@ -107,7 +107,7 @@
             </div>
             <div class="format-ranking" id="format-ranking"></div>
           </div>
-          <p class="historical-data-note" id="formats-historical-note" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></svg><span><strong>Incluye el histórico de Telegram</strong>Los 207 consumos aparecen en el historial con día y mes, pero sin una hora inventada. Solo afectan al volumen y a los formatos.</span></p>
+          <p class="historical-data-note" id="formats-historical-note" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></svg><span><strong>Incluye el histórico de Telegram</strong>Los 207 consumos aparecen en el historial con día y mes, pero sin una hora inventada. Se suman al marcador, al volumen y a los formatos; no alteran patrones horarios ni rachas.</span></p>
         </section>
 
         <section class="volume-section home-content" aria-labelledby="volume-title">
@@ -153,7 +153,7 @@
             <button class="google-button" id="google-login" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285f4" d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.8 3-4.3 3-7.3Z"/><path fill="#34a853" d="M12 22c2.7 0 5-.9 6.6-2.5L15.4 17c-.9.6-2 1-3.4 1a5.8 5.8 0 0 1-5.5-4H3.2v2.6A10 10 0 0 0 12 22Z"/><path fill="#fbbc05" d="M6.5 14a6 6 0 0 1 0-4V7.4H3.2a10 10 0 0 0 0 9.2L6.5 14Z"/><path fill="#ea4335" d="M12 6c1.5 0 2.8.5 3.8 1.5l2.9-2.8A9.7 9.7 0 0 0 3.2 7.4L6.5 10A5.8 5.8 0 0 1 12 6Z"/></svg><span>Continuar con Google</span></button>
             <button class="text-button profile-logout" id="google-logout" type="button" hidden>Cerrar sesión</button>
             <div class="profile-stats">
-              <article><span class="profile-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 5h10v14H7a2 2 0 0 1-2-2V5Z"/><path d="M15 8h2.2a2.8 2.8 0 0 1 0 5.6H15M8 8h4M8 11h4"/></svg></span><small>Total</small><strong id="profile-total">0</strong><em>registros precisos</em></article>
+              <article><span class="profile-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 5h10v14H7a2 2 0 0 1-2-2V5Z"/><path d="M15 8h2.2a2.8 2.8 0 0 1 0 5.6H15M8 8h4M8 11h4"/></svg></span><small>Total</small><strong id="profile-total">0</strong><em>registros combinados</em></article>
               <article><span class="profile-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3S6.5 9.2 6.5 14.2a5.5 5.5 0 0 0 11 0C17.5 9.2 12 3 12 3Z"/><path d="M9.5 15.5c.4 1.2 1.3 1.8 2.5 2"/></svg></span><small>Volumen</small><strong id="profile-liters">0 L</strong><em id="profile-volume-context">consumido</em></article>
               <article><span class="profile-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-2.9-5.6 2.9 1.1-6.2L3 9.6l6.2-.9L12 3Z"/></svg></span><small>Favorita</small><strong id="profile-favorite">—</strong><em>formato habitual</em></article>
             </div>
@@ -393,10 +393,10 @@
     </dialog>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script src="assets/vendor/leaflet.js?v=49"></script>
-    <script src="assets/vendor/leaflet-heat.js?v=49"></script>
-    <script src="beer-catalog.js?v=49"></script>
-    <script type="module" src="firebase-sync.js?v=49"></script>
-    <script src="script.js?v=49"></script>
+    <script src="assets/vendor/leaflet.js?v=50"></script>
+    <script src="assets/vendor/leaflet-heat.js?v=50"></script>
+    <script src="beer-catalog.js?v=50"></script>
+    <script type="module" src="firebase-sync.js?v=50"></script>
+    <script src="script.js?v=50"></script>
   </body>
 </html>
