@@ -201,12 +201,14 @@ section { scroll-margin-top: 90px; }
 .empty-state span { font-size: 30px; }
 .empty-state p { font-size: 12px; line-height: 1.6; }
 .history-list { margin: 0; padding: 0; list-style: none; border: 1px solid var(--line); border-radius: 22px; background: var(--card); overflow: hidden; }
-.history-item { display: grid; grid-template-columns: 44px 1fr auto auto; align-items: center; gap: 12px; min-height: 68px; padding: 11px 16px; border-bottom: 1px solid var(--line); }
+.history-item { display: grid; grid-template-columns: 44px 1fr auto; align-items: center; gap: 12px; min-height: 84px; padding: 13px 16px; border-bottom: 1px solid var(--line); }
 .history-item:last-child { border-bottom: 0; }
 .beer-dot { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 13px; background: #fff0cf; color: #d98a00; font-size: 14px; }
 .history-main strong, .history-main small { display: block; }
 .history-main strong { font: 12px "Fraunces"; }
-.history-main small, .history-meta { margin-top: 3px; color: var(--muted); font-size: 9px; }
+.history-main small { margin-top: 5px; color: var(--muted); font-size: 9px; }
+.history-date { width: fit-content; margin-top: 6px; padding: 5px 8px 5px 6px; display: flex; align-items: center; gap: 5px; border-radius: 8px; background: #f4ecda; color: #78530c; font-size: 8px; font-weight: 800; line-height: 1; }
+.history-date svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .history-actions { display: flex; align-items: center; gap: 3px; }
 .edit-entry, .delete-entry { width: 34px; height: 34px; padding: 7px; display: grid; place-items: center; border: 0; border-radius: 11px; background: transparent; cursor: pointer; }
 .edit-entry { color: var(--green); }
@@ -651,7 +653,6 @@ html.map-fullscreen-open, body.map-fullscreen-open { overflow: hidden; overscrol
   .insight-grid article { min-height: 140px; padding: 17px; }
   .insight-icon { margin-bottom: 20px; }
   .history-item { grid-template-columns: 42px 1fr auto; padding: 10px 12px; }
-  .history-meta { display: none; }
   .location-concept { padding: 17px; }
   .location-head { align-items: center; }
   .location-head h3 { font-size: 23px; }
