@@ -260,7 +260,8 @@ function scheduleTelegramMigration() {
   clearTimeout(telegramMigrationTimer);
   telegramMigrationTimer = setTimeout(() => {
     try {
-      if (!activeUserId || !migrateTelegramHistory()) return;
+      if (!activeUserId) return;
+      if (!migrateTelegramHistory()) return;
       save(); render(); showToast("Histórico de Telegram integrado");
     } catch (error) {
       console.error("No se pudo integrar el histórico de Telegram",error);
@@ -1329,7 +1330,6 @@ window.addEventListener("birrometro-auth", (event) => {
     activeUserEmail = user.email || null;
     applyState(readUserState(user.uid));
     appShell.dataset.auth = "ready";
-    scheduleTelegramMigration();
   } else {
     activeUserId = null;
     activeUserEmail = null;

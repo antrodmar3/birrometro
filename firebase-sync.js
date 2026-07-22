@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
 import { getAuth, GoogleAuthProvider, onAuthStateChanged, setPersistence, browserLocalPersistence, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
-import { getFirestore, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, collection, arrayUnion, arrayRemove, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, collection, arrayUnion, arrayRemove, serverTimestamp, writeBatch, onSnapshot } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
 
 const firebaseConfig = {
   projectId: "birrometro-antrodmar3",
@@ -21,9 +21,13 @@ let syncTimer = null;
 let cachedState = null;
 let cachedGroupIds = [];
 let groupOperationPending = false;
+let unsubscribeDrinks = null;
+let localSavePending = false;
 
 const publicUser = (user) => user ? ({ uid:user.uid, displayName:user.displayName, email:user.email, photoURL:user.photoURL }) : null;
 const userDocument = (uid) => doc(db, "users", uid);
+const userDrinksCollection = (uid) => collection(db, "users", uid, "drinks");
+const userDrinkDocument = (uid, drinkId) => doc(db, "users", uid, "drinks", drinkId);
 const groupDocument = (groupId) => doc(db, "groups", groupId);
 const groupMemberDocument = (groupId, uid) => doc(db, "groups", groupId, "members", uid);
 const normalizedGroupIds = (value) => [...new Set((Array.isArray(value) ? value : []).map((item) => String(item || "").trim().toUpperCase()).filter(Boolean))];
@@ -130,16 +134,66 @@ async function runGroupOperation(operation) {
   } finally { groupOperationPending = false; }
 }
 
+const normalizedDrink = (drink) => JSON.parse(JSON.stringify(drink || {}));
+const orderedDrinks = (drinks) => [...drinks].sort((a,b) => String(a.id).localeCompare(String(b.id)));
+const drinksSignature = (drinks) => JSON.stringify(orderedDrinks(drinks).map(normalizedDrink));
+
+async function commitDrinkOperations(operations) {
+  for (let start = 0; start < operations.length; start += 400) {
+    const batch = writeBatch(db);
+    operations.slice(start,start + 400).forEach((operation) => {
+      const reference = userDrinkDocument(currentUser.uid,operation.id);
+      if (operation.kind === "delete") batch.delete(reference);
+      else batch.set(reference,normalizedDrink(operation.drink));
+    });
+    await batch.commit();
+  }
+}
+
+async function syncDrinkDocuments(previousDrinks, nextDrinks) {
+  const previous = new Map((Array.isArray(previousDrinks) ? previousDrinks : []).map((drink) => [String(drink.id),drink]));
+  const next = new Map((Array.isArray(nextDrinks) ? nextDrinks : []).map((drink) => [String(drink.id),drink]));
+  const operations = [];
+  next.forEach((drink,id) => { if (!previous.has(id) || JSON.stringify(normalizedDrink(previous.get(id))) !== JSON.stringify(normalizedDrink(drink))) operations.push({kind:"set",id,drink}); });
+  previous.forEach((drink,id) => { if (!next.has(id)) operations.push({kind:"delete",id}); });
+  if (operations.length) await commitDrinkOperations(operations);
+}
+
+async function loadDrinkDocuments(user, legacyState) {
+  const snapshots = await getDocs(userDrinksCollection(user.uid));
+  const stored = snapshots.docs.map((entry) => ({...entry.data(),id:entry.id}));
+  if (stored.length || Number(legacyState?.drinksStorageVersion || 0) >= 2) return stored;
+  const legacy = Array.isArray(legacyState?.drinks) ? legacyState.drinks : [];
+  if (legacy.length) await commitDrinkOperations(legacy.map((drink) => ({kind:"set",id:String(drink.id),drink})));
+  await setDoc(userDocument(user.uid),{drinksStorageVersion:2,updatedAt:serverTimestamp()},{merge:true});
+  return legacy;
+}
+
+function watchDrinkDocuments(user) {
+  if (unsubscribeDrinks) unsubscribeDrinks();
+  unsubscribeDrinks = onSnapshot(userDrinksCollection(user.uid),(snapshot) => {
+    if (!cachedState || localSavePending) return;
+    const drinks = snapshot.docs.map((entry) => ({...entry.data(),id:entry.id}));
+    if (drinksSignature(drinks) === drinksSignature(cachedState.drinks || [])) return;
+    cachedState = {...cachedState,drinks};
+    window.dispatchEvent(new CustomEvent("birrometro-cloud-state",{detail:cachedState}));
+  },() => window.dispatchEvent(new Event("birrometro-sync-error")));
+}
+
 async function syncState(state) {
   if (!currentUser || !state) return;
+  await syncDrinkDocuments(cachedState?.drinks || [],state.drinks || []);
   cachedState = state;
-  await setDoc(userDocument(currentUser.uid), { drinks:state.drinks || [], historical:state.historical || [], imports:state.imports || {}, album:state.album || [], driver:state.driver || {}, updatedAt:serverTimestamp() }, { merge:true });
+  await setDoc(userDocument(currentUser.uid), { drinks:state.drinks || [],drinksStorageVersion:2,historical:state.historical || [],imports:state.imports || {},album:state.album || [],driver:state.driver || {},updatedAt:serverTimestamp() }, { merge:true });
   await syncOwnGroupStats(state);
 }
 
 window.addEventListener("birrometro-state-save", (event) => {
   clearTimeout(syncTimer);
-  syncTimer = setTimeout(() => syncState(event.detail).catch(() => window.dispatchEvent(new Event("birrometro-sync-error"))), 350);
+  localSavePending = true;
+  syncTimer = setTimeout(() => syncState(event.detail)
+    .catch(() => window.dispatchEvent(new Event("birrometro-sync-error")))
+    .finally(() => { localSavePending = false; }), 350);
 });
 window.addEventListener("birrometro-login", () => signInWithPopup(auth, provider).catch(() => window.dispatchEvent(new Event("birrometro-auth-error"))));
 window.addEventListener("birrometro-logout", () => signOut(auth));
@@ -151,6 +205,8 @@ setPersistence(auth, browserLocalPersistence).then(() => onAuthStateChanged(auth
   currentUser = user;
   cachedState = null;
   cachedGroupIds = [];
+  localSavePending = false;
+  if (unsubscribeDrinks) { unsubscribeDrinks(); unsubscribeDrinks = null; }
   clearTimeout(syncTimer);
   window.dispatchEvent(new CustomEvent("birrometro-auth", { detail:publicUser(user) }));
   if (!user) { window.dispatchEvent(new CustomEvent("birrometro-groups", {detail:[]})); return; }
@@ -158,17 +214,20 @@ setPersistence(auth, browserLocalPersistence).then(() => onAuthStateChanged(auth
     const reference = userDocument(user.uid);
     const snapshot = await getDoc(reference);
     if (snapshot.exists()) {
-      cachedState = snapshot.data();
+      const legacyState = snapshot.data(); const drinks = await loadDrinkDocuments(user,legacyState);
+      cachedState = {...legacyState,drinks,drinksStorageVersion:2};
       cachedGroupIds = normalizedGroupIds(snapshot.data().groupIds);
       window.dispatchEvent(new CustomEvent("birrometro-cloud-state", { detail:cachedState }));
+      watchDrinkDocuments(user);
       await syncOwnGroupStats(cachedState);
       await loadGroups();
       return;
     }
-    const initialState = { drinks:[], historical:[], imports:{}, album:[], driver:{enabled:true,weight:null,height:null},groupIds:[] };
+    const initialState = { drinks:[],drinksStorageVersion:2,historical:[],imports:{},album:[],driver:{enabled:true,weight:null,height:null},groupIds:[] };
     cachedState = initialState;
     await syncState(initialState);
     window.dispatchEvent(new CustomEvent("birrometro-cloud-state", { detail:initialState }));
+    watchDrinkDocuments(user);
     window.dispatchEvent(new CustomEvent("birrometro-groups", {detail:[]}));
   } catch {
     window.dispatchEvent(new Event("birrometro-sync-error"));

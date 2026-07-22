@@ -12,6 +12,10 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow read, create, update, delete: if signedIn() && request.auth.uid == userId;
+
+      match /drinks/{drinkId} {
+        allow read, create, update, delete: if signedIn() && request.auth.uid == userId;
+      }
     }
 
     match /groups/{groupId} {
