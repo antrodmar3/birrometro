@@ -23,6 +23,7 @@ let cachedGroupIds = [];
 let groupOperationPending = false;
 let unsubscribeDrinks = null;
 let localSavePending = false;
+let syncedDrinks = [];
 
 const publicUser = (user) => user ? ({ uid:user.uid, displayName:user.displayName, email:user.email, photoURL:user.photoURL }) : null;
 const userDocument = (uid) => doc(db, "users", uid);
@@ -135,6 +136,7 @@ async function runGroupOperation(operation) {
 }
 
 const normalizedDrink = (drink) => JSON.parse(JSON.stringify(drink || {}));
+const clonedDrinks = (drinks) => (Array.isArray(drinks) ? drinks : []).map(normalizedDrink);
 const orderedDrinks = (drinks) => [...drinks].sort((a,b) => String(a.id).localeCompare(String(b.id)));
 const drinksSignature = (drinks) => JSON.stringify(orderedDrinks(drinks).map(normalizedDrink));
 
@@ -162,11 +164,13 @@ async function syncDrinkDocuments(previousDrinks, nextDrinks) {
 async function loadDrinkDocuments(user, legacyState) {
   const snapshots = await getDocs(userDrinksCollection(user.uid));
   const stored = snapshots.docs.map((entry) => ({...entry.data(),id:entry.id}));
-  if (stored.length || Number(legacyState?.drinksStorageVersion || 0) >= 2) return stored;
   const legacy = Array.isArray(legacyState?.drinks) ? legacyState.drinks : [];
-  if (legacy.length) await commitDrinkOperations(legacy.map((drink) => ({kind:"set",id:String(drink.id),drink})));
-  await setDoc(userDocument(user.uid),{drinksStorageVersion:2,updatedAt:serverTimestamp()},{merge:true});
-  return legacy;
+  if (Number(legacyState?.drinksStorageVersion || 0) >= 3) return stored;
+  const storedIds = new Set(stored.map((drink) => String(drink.id)));
+  const recoverable = legacy.filter((drink) => !storedIds.has(String(drink.id)));
+  if (recoverable.length) await commitDrinkOperations(recoverable.map((drink) => ({kind:"set",id:String(drink.id),drink})));
+  await setDoc(userDocument(user.uid),{drinks:[],drinksStorageVersion:3,updatedAt:serverTimestamp()},{merge:true});
+  return [...stored,...recoverable];
 }
 
 function watchDrinkDocuments(user) {
@@ -174,17 +178,19 @@ function watchDrinkDocuments(user) {
   unsubscribeDrinks = onSnapshot(userDrinksCollection(user.uid),(snapshot) => {
     if (!cachedState || localSavePending) return;
     const drinks = snapshot.docs.map((entry) => ({...entry.data(),id:entry.id}));
-    if (drinksSignature(drinks) === drinksSignature(cachedState.drinks || [])) return;
-    cachedState = {...cachedState,drinks};
+    if (drinksSignature(drinks) === drinksSignature(syncedDrinks)) return;
+    syncedDrinks = clonedDrinks(drinks);
+    cachedState = {...cachedState,drinks:clonedDrinks(drinks)};
     window.dispatchEvent(new CustomEvent("birrometro-cloud-state",{detail:cachedState}));
   },() => window.dispatchEvent(new Event("birrometro-sync-error")));
 }
 
 async function syncState(state) {
   if (!currentUser || !state) return;
-  await syncDrinkDocuments(cachedState?.drinks || [],state.drinks || []);
-  cachedState = state;
-  await setDoc(userDocument(currentUser.uid), { drinks:state.drinks || [],drinksStorageVersion:2,historical:state.historical || [],imports:state.imports || {},album:state.album || [],driver:state.driver || {},updatedAt:serverTimestamp() }, { merge:true });
+  await syncDrinkDocuments(syncedDrinks,state.drinks || []);
+  syncedDrinks = clonedDrinks(state.drinks);
+  cachedState = {...state,drinks:clonedDrinks(state.drinks)};
+  await setDoc(userDocument(currentUser.uid), { drinksStorageVersion:3,historical:state.historical || [],imports:state.imports || {},album:state.album || [],driver:state.driver || {},updatedAt:serverTimestamp() }, { merge:true });
   await syncOwnGroupStats(state);
 }
 
@@ -206,6 +212,7 @@ setPersistence(auth, browserLocalPersistence).then(() => onAuthStateChanged(auth
   cachedState = null;
   cachedGroupIds = [];
   localSavePending = false;
+  syncedDrinks = [];
   if (unsubscribeDrinks) { unsubscribeDrinks(); unsubscribeDrinks = null; }
   clearTimeout(syncTimer);
   window.dispatchEvent(new CustomEvent("birrometro-auth", { detail:publicUser(user) }));
@@ -215,7 +222,8 @@ setPersistence(auth, browserLocalPersistence).then(() => onAuthStateChanged(auth
     const snapshot = await getDoc(reference);
     if (snapshot.exists()) {
       const legacyState = snapshot.data(); const drinks = await loadDrinkDocuments(user,legacyState);
-      cachedState = {...legacyState,drinks,drinksStorageVersion:2};
+      syncedDrinks = clonedDrinks(drinks);
+      cachedState = {...legacyState,drinks:clonedDrinks(drinks),drinksStorageVersion:3};
       cachedGroupIds = normalizedGroupIds(snapshot.data().groupIds);
       window.dispatchEvent(new CustomEvent("birrometro-cloud-state", { detail:cachedState }));
       watchDrinkDocuments(user);
@@ -223,7 +231,7 @@ setPersistence(auth, browserLocalPersistence).then(() => onAuthStateChanged(auth
       await loadGroups();
       return;
     }
-    const initialState = { drinks:[],drinksStorageVersion:2,historical:[],imports:{},album:[],driver:{enabled:true,weight:null,height:null},groupIds:[] };
+    const initialState = { drinks:[],drinksStorageVersion:3,historical:[],imports:{},album:[],driver:{enabled:true,weight:null,height:null},groupIds:[] };
     cachedState = initialState;
     await syncState(initialState);
     window.dispatchEvent(new CustomEvent("birrometro-cloud-state", { detail:initialState }));

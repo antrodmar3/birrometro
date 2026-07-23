@@ -201,7 +201,7 @@ function readUserState(uid) {
   } catch { return {drinks:[],historical:[],imports:{},album:[],driver:defaultDriverProfile()}; }
 }
 function applyState(nextState) {
-  state.drinks = Array.isArray(nextState?.drinks) ? nextState.drinks : [];
+  state.drinks = Array.isArray(nextState?.drinks) ? nextState.drinks.map((drink) => JSON.parse(JSON.stringify(drink))) : [];
   state.historical = sanitizeHistoricalEntries(nextState?.historical);
   state.imports = nextState?.imports || {};
   state.album = sanitizeAlbum(nextState?.album);
